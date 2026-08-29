@@ -82,10 +82,25 @@ export function publicUser(u: User) {
 
 // -------------------------------------------------------------------------------------
 // CASES
-// -------------------------------------------------------------------------------------
+function mapCase(raw: any): Case {
+  return {
+    id: raw.id,
+    title: raw.title,
+    description: raw.description,
+    status: raw.status,
+    priority: raw.priority,
+    createdAt: raw.created_at || raw.createdAt,
+    updatedAt: raw.updated_at || raw.updatedAt,
+    assignedTo: raw.assigned_to || raw.assignedTo,
+    agency: raw.agency,
+    classification: raw.classification,
+  }
+}
+
 export async function listCases(user?: any): Promise<Case[]> {
   try {
-    return await request<Case[]>('/cases')
+    const list = await request<any[]>('/cases')
+    return list.map(mapCase)
   } catch {
     return []
   }
@@ -93,7 +108,8 @@ export async function listCases(user?: any): Promise<Case[]> {
 
 export async function getCase(caseId: string): Promise<Case | undefined> {
   try {
-    return await request<Case>(`/cases/${caseId}`)
+    const raw = await request<any>(`/cases/${caseId}`)
+    return mapCase(raw)
   } catch {
     return undefined
   }
