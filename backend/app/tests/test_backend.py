@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from app.db.postgres import Base
-from app.models.models import User, Case, Document, CanonicalEntity, Finding, AuditLog, EntityMergeDecision
+from app.models.models import User, Case, Document, CanonicalEntity, Finding, AuditLog, EntityMergeDecision, RawMention
 from app.core.security import get_password_hash, verify_password
 from app.services.nlp.ner_service import EntityExtractor
 from app.services.entity_resolution.resolution_service import EntityResolutionService
@@ -19,7 +19,7 @@ from app.services.patterns.findings_service import FindingsEngine
 from app.services.copilot.copilot_service import CopilotService
 
 # In-memory SQLite for testing
-TEST_DATABASE_URL = "sqlite:///./test.db"
+TEST_DATABASE_URL = "sqlite:///:memory:"
 
 class TestBackendPipeline(unittest.TestCase):
     @classmethod
@@ -61,11 +61,6 @@ class TestBackendPipeline(unittest.TestCase):
     def tearDown(self):
         self.db.close()
         Base.metadata.drop_all(bind=self.engine)
-        if os.path.exists("./test.db"):
-            try:
-                os.remove("./test.db")
-            except Exception:
-                pass
 
     def test_auth_security(self):
         # Verify password hashing

@@ -1,0 +1,7 @@
+strict-peer-dependencies=false
+fetch-retries=5
+fetch-retry-mintimeout=20000
+fetch-retry-maxtimeout=120000
+allow-new-unsafe-versions=true
+update-notifier=false
+

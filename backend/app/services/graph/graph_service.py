@@ -1,7 +1,7 @@
 import math
 from typing import Dict, List, Any, Optional
 from neo4j import Session
-from app.db.neo4j import get_neo4j
+from app.db.neo4j_db import get_neo4j
 
 # Map frontend entity types to Neo4j Node Labels
 TYPE_TO_LABEL = {

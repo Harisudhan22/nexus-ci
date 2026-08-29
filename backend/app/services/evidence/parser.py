@@ -2,7 +2,7 @@ import json
 import pandas as pd
 import fitz  # PyMuPDF
 import docx
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Any, Tuple, Optional
 
 def parse_pdf(file_path: str) -> str:
     """Parses text from a PDF file using PyMuPDF."""

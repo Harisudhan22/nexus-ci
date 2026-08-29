@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import Dict, Any
 
 from app.db.postgres import get_db
-from app.db.neo4j import get_neo4j
+from app.db.neo4j_db import get_neo4j
 from app.core.dependencies import get_current_user, verify_case_access
 from app.models.models import User
 from app.services.copilot.copilot_service import CopilotService

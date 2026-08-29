@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from typing import List, Dict, Any, Optional
 
 from app.db.postgres import get_db
-from app.db.neo4j import get_neo4j
+from app.db.neo4j_db import get_neo4j
 from app.core.dependencies import get_current_user, verify_case_access
 from app.models.models import Document, User, RawMention, Case, AuditLog
 from app.services.ingestion.coordinator import PipelineCoordinator

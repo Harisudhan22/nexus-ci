@@ -135,7 +135,7 @@ class AuditLog(Base):
     
     id = Column(String, primary_key=True, index=True)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
-    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    user_id = Column(String, ForeignKey("users.id"), nullable=True)
     action = Column(String, nullable=False)  # LOGIN, UPLOAD, VIEW, etc.
     case_id = Column(String, ForeignKey("cases.id"), nullable=True)
     resource = Column(String, nullable=False)

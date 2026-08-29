@@ -4,7 +4,7 @@ from typing import List, Dict, Any, Optional
 import math
 
 from app.db.postgres import get_db
-from app.db.neo4j import get_neo4j
+from app.db.neo4j_db import get_neo4j
 from app.core.dependencies import get_current_user, verify_case_access
 from app.models.models import User, CanonicalEntity
 from app.services.graph.graph_service import Neo4jGraphService

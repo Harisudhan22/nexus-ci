@@ -7,7 +7,7 @@ import datetime
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from app.db.postgres import SessionLocal, Base, engine
-from app.db.neo4j import neo4j_client
+from app.db.neo4j_db import neo4j_client
 from app.core.security import get_password_hash
 from app.models.models import User, Case, CanonicalEntity, Document, RawMention, Finding, AuditLog, EntityMergeDecision
 from app.services.graph.graph_service import Neo4jGraphService
@@ -16,16 +16,11 @@ def seed_databases():
     print("Seeding PostgreSQL...")
     db = SessionLocal()
     
-    # 1. Clear database
-    db.query(AuditLog).delete()
-    db.query(Finding).delete()
-    db.query(RawMention).delete()
-    db.query(Document).delete()
-    db.query(EntityMergeDecision).delete()
-    db.query(CanonicalEntity).delete()
-    db.query(Case).delete()
-    db.query(User).delete()
-    db.commit()
+    # 1. Recreate schemas to apply column nullability updates
+    db.close()
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    db = SessionLocal()
 
     # 2. Seed Users
     hashed_password = get_password_hash("demo1234")
