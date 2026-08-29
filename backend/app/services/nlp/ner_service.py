@@ -1,5 +1,4 @@
 import re
-import spacy
 from typing import List, Dict, Any, Tuple
 
 # Precompile regular expressions for deterministic entities
@@ -14,6 +13,7 @@ CASE_ID_REGEX = re.compile(r"\bCASE-\d{3,5}\b", re.IGNORECASE)
 class EntityExtractor:
     def __init__(self):
         try:
+            import spacy
             self.nlp = spacy.load("en_core_web_sm")
         except Exception:
             print("spaCy model 'en_core_web_sm' not found. Using regex and rule-based fallback.")
