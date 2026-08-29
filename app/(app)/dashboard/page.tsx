@@ -21,7 +21,7 @@ import {
   listEvidence,
   listFindings,
   listResolutionCandidates,
-  getUser,
+  listUsers,
 } from '@/lib/domain/store'
 import { PageHeader } from '@/components/page-header'
 import { ActivityChart } from '@/components/activity-chart'
@@ -39,18 +39,21 @@ const ACTION_VERB: Record<string, string> = {
 
 export default async function DashboardPage() {
   const user = (await getSessionUser())!
-  const cases = listCases(user)
+  const cases = await listCases(user)
   const caseIds = cases.map((c) => c.id)
 
-  const entities = listEntities().filter((e) => e.caseIds.some((c) => caseIds.includes(c)))
-  const evidence = listEvidence().filter((e) => caseIds.includes(e.caseId))
-  const findings = listFindings().filter((f) => caseIds.includes(f.caseId))
+  const allUsers = await listUsers()
+  const userMap = new Map(allUsers.map((u) => [u.id, u]))
+
+  const entities = (await Promise.all(caseIds.map((cId) => listEntities(cId)))).flat()
+  const evidence = (await Promise.all(caseIds.map((cId) => listEvidence(cId)))).flat()
+  const findings = (await Promise.all(caseIds.map((cId) => listFindings(cId)))).flat()
   const highFindings = findings.filter((f) => f.severity === 'high')
-  const crossLinks = listCrossCaseLinks().filter((l) => l.caseIds.some((c) => caseIds.includes(c)))
-  const pendingMerges = listResolutionCandidates().filter(
+  const crossLinks = (await Promise.all(caseIds.map((cId) => listCrossCaseLinks(cId)))).flat()
+  const pendingMerges = (await Promise.all(caseIds.map((cId) => listResolutionCandidates(cId)))).flat().filter(
     (c) => c.status === 'pending' && caseIds.includes(c.caseId),
   )
-  const audit = listAudit()
+  const audit = (await listAudit())
     .filter((a) => !a.caseId || caseIds.includes(a.caseId))
     .slice(0, 6)
 
@@ -203,7 +206,7 @@ export default async function DashboardPage() {
           </div>
           <ul className="divide-y divide-border">
             {audit.map((a) => {
-              const actor = getUser(a.userId)
+              const actor = userMap.get(a.userId)
               return (
                 <li key={a.id} className="flex items-center gap-3 px-5 py-3 text-sm">
                   <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-secondary text-[10px] font-medium text-muted-foreground">

@@ -1,0 +1,59 @@
+from fastapi import FastAPI, Request, status
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from app.db.postgres import engine, Base
+from app.api import auth, cases, evidence, entities, graph, findings, timeline, paths, resolution, copilot, audit
+
+# Initialize database tables
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI(
+    title="NEXUS-CI API",
+    description="Evidence-Centric AI Criminal Intelligence Platform Backend",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc"
+)
+
+# Enable CORS for frontend API calls
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # For hackathon, allow all. In production restrict to NextJS host
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Register routers
+app.include_router(auth.router, prefix="/api")
+app.include_router(cases.router, prefix="/api")
+app.include_router(evidence.router, prefix="/api")
+app.include_router(entities.router, prefix="/api")
+app.include_router(graph.router, prefix="/api")
+app.include_router(findings.router, prefix="/api")
+app.include_router(timeline.router, prefix="/api")
+app.include_router(paths.router, prefix="/api")
+app.include_router(resolution.router, prefix="/api")
+app.include_router(copilot.router, prefix="/api")
+app.include_router(audit.router, prefix="/api")
+
+@app.get("/api/health")
+def health_check():
+    return {"status": "healthy", "service": "NEXUS-CI Core Backend"}
+
+# Global exception interceptor to satisfy Rule 40: "Error Handling"
+@app.exception_handler(Exception)
+def global_exception_handler(request: Request, exc: Exception):
+    error_msg = str(exc)
+    print(f"Server Error occurred: {error_msg}")
+    
+    # Check if this looks like a pipeline/parser fail
+    if "parser" in error_msg.lower() or "csv" in error_msg.lower() or "pdf" in error_msg.lower():
+        user_message = f"Analysis failed during processing: {error_msg}. The original evidence remains safely stored."
+    else:
+        user_message = "An analytical pipeline exception was encountered on the server. The data integrity remains secure."
+        
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"detail": user_message}
+    )

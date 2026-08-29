@@ -153,3 +153,42 @@ export function StatCard({
     </div>
   )
 }
+
+// ---------- Stat Cell ----------
+export function StatCell({
+  label,
+  value,
+  mono = false,
+}: {
+  label: string
+  value: string
+  mono?: boolean
+}) {
+  return (
+    <div className="flex flex-col bg-card p-3 text-center">
+      <span className="text-[10px] uppercase text-muted-foreground">{label}</span>
+      <span className={cn('mt-0.5 text-sm font-semibold', mono && 'font-mono')}>{value}</span>
+    </div>
+  )
+}
+
+// ---------- Meter ----------
+export function Meter({ value, label = 'Confidence' }: { value: number; label?: string }) {
+  return <ConfidenceMeter value={value} label={label} />
+}
+
+// ---------- Relevance Badge ----------
+export function RelevanceBadge({ value }: { value: number }) {
+  const tone =
+    value >= 75
+      ? 'border-success/40 bg-success/10 text-success'
+      : value >= 50
+        ? 'border-warning/40 bg-warning/10 text-warning'
+        : 'border-border bg-muted text-muted-foreground'
+  return (
+    <span className={cn('inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-mono font-medium', tone)}>
+      {value}%
+    </span>
+  )
+}
+

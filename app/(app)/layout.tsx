@@ -7,7 +7,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const user = await getSessionUser()
   if (!user) redirect('/login')
 
-  const cases = listCases(user).map((c) => ({ id: c.id, title: c.title }))
+  const cases = (await listCases(user)).map((c) => ({ id: c.id, title: c.title }))
 
   return (
     <AppShell user={user} cases={cases}>

@@ -5,7 +5,7 @@ import { CasesBrowser } from "@/components/cases-browser"
 
 export default async function CasesPage() {
   const user = await requireUser()
-  const cases = listCases(user)
+  const cases = await listCases(user)
 
   return (
     <div>
