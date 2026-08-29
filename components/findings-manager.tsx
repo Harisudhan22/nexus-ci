@@ -140,6 +140,9 @@ export function FindingsManager({ caseId, initialFindings }: { caseId: string; i
           ))}
         </div>
       )}
+      <div className="mt-8 text-[10px] text-muted-foreground italic leading-normal text-center border-t border-border/40 pt-4">
+        Disclaimer: Investigative findings are generated from evidence linkages and relationship weights computed via database rules and network centrality analysis. They represent analytical signals to guide human investigator reviews and do not constitute proof of guilt or criminality.
+      </div>
     </div>
   )
 }

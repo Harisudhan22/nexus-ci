@@ -216,6 +216,9 @@ export function EntitiesResolver({
           )}
         </section>
       )}
+      <div className="mt-8 text-[10px] text-muted-foreground italic leading-normal text-center border-t border-border/40 pt-4">
+        Disclaimer: This registry lists resolved entity profile associations based on analytical matching confidence algorithms. These listings represent investigative leads and priority signals, not a final determination of guilt or criminality.
+      </div>
     </div>
   )
 }

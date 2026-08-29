@@ -205,6 +205,9 @@ export function CopilotChat({ caseId }: { caseId: string }) {
             <Send className="size-4" />
           </button>
         </form>
+        <div className="mt-2 text-[9px] text-muted-foreground text-center italic">
+          Disclaimer: Investigator Copilot is a decision-support assistant. All generated interpretations must be verified against source case documents before taking action.
+        </div>
       </div>
     </div>
   )

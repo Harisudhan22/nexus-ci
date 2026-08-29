@@ -49,6 +49,10 @@ export function EntityDrawer({
         <StatCell label="Centrality" value={`${Math.round((centrality?.centrality ?? 0) * 100)}%`} />
       </div>
 
+      <div className="mt-1.5 text-[10px] text-muted-foreground italic leading-normal text-center">
+        This is an analytical prioritization signal, not a determination of criminality.
+      </div>
+
       {centrality?.isBridge && (
         <div className="mt-3 flex items-start gap-2 rounded-md border border-[var(--warn)]/40 bg-[var(--warn)]/10 p-3 text-sm">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--warn)]" />
