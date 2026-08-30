@@ -1,0 +1,329 @@
+[
+  {
+    "fir_no": "FIR-101-01",
+    "case_id": "case-101",
+    "police_station": "Central Station PS",
+    "date": "2026-08-01T10:00:00",
+    "suspects": [
+      {
+        "name": "Ravi Kumar",
+        "role": "primary_target",
+        "phone": "9876543210",
+        "vehicle": "TN01AB1234"
+      },
+      {
+        "name": "Arun",
+        "role": "logistics_driver"
+      }
+    ],
+    "complaint_text": "Primary suspect Ravi Kumar spotted meeting associate Arun at Central Station. Target observed driving white Swift TN01AB1234 and coordinating via contact 9876543210."
+  },
+  {
+    "fir_no": "FIR-101-02",
+    "case_id": "case-101",
+    "police_station": "Anna Nagar PS",
+    "date": "2026-08-03T14:30:00",
+    "suspects": [
+      {
+        "name": "Vikram Seth",
+        "role": "tech_operator",
+        "phone": "9876543212"
+      },
+      {
+        "name": "Karthik Raj",
+        "role": "mule_recruiter"
+      }
+    ],
+    "complaint_text": "Phishing and OTP rerouting module operated by Vikram Seth in coordination with mule handler Karthik Raj."
+  },
+  {
+    "fir_no": "FIR-101-03",
+    "case_id": "case-101",
+    "police_station": "T Nagar PS",
+    "date": "2026-08-05T16:00:00",
+    "suspects": [
+      {
+        "name": "Deepak Verma",
+        "role": "cashier",
+        "phone": "9876543214"
+      }
+    ],
+    "complaint_text": "Suspicious ATM withdrawal runs executed by Deepak Verma under instructions from senior handler."
+  },
+  {
+    "fir_no": "FIR-101-04",
+    "case_id": "case-101",
+    "police_station": "Central Station PS",
+    "date": "2026-08-08T11:20:00",
+    "suspects": [
+      {
+        "name": "Ravi Kumar",
+        "role": "coordinator"
+      },
+      {
+        "name": "Suresh Nair",
+        "role": "hardware_supplier"
+      }
+    ],
+    "complaint_text": "Ravi Kumar purchased 50 pre-activated SIM cards from hardware merchant Suresh Nair."
+  },
+  {
+    "fir_no": "FIR-203-01",
+    "case_id": "case-203",
+    "police_station": "Harbour PS",
+    "date": "2026-06-10T09:15:00",
+    "suspects": [
+      {
+        "name": "Ravi K",
+        "role": "customs_broker",
+        "vehicle": "TN01AB1234"
+      },
+      {
+        "name": "Manish Shah",
+        "role": "importer"
+      }
+    ],
+    "complaint_text": "Customs broker Ravi K cleared unauthorized consignment at Harbour Gate 4. Vehicle TN01AB1234 sighted on CCTV."
+  },
+  {
+    "fir_no": "FIR-203-02",
+    "case_id": "case-203",
+    "police_station": "Royapuram PS",
+    "date": "2026-06-15T18:45:00",
+    "suspects": [
+      {
+        "name": "Prakash Rao",
+        "role": "dock_supervisor"
+      },
+      {
+        "name": "Salim Khan",
+        "role": "freight_operator"
+      }
+    ],
+    "complaint_text": "Dock supervisor Prakash Rao falsified manifest records for freight operator Salim Khan."
+  },
+  {
+    "fir_no": "FIR-203-03",
+    "case_id": "case-203",
+    "police_station": "Harbour PS",
+    "date": "2026-06-22T12:00:00",
+    "suspects": [
+      {
+        "name": "Anand Mohan",
+        "role": "warehouse_owner"
+      }
+    ],
+    "complaint_text": "Undocumented electronic parts stored at North Wharf Warehouse managed by Anand Mohan."
+  },
+  {
+    "fir_no": "FIR-203-04",
+    "case_id": "case-203",
+    "police_station": "Royapuram PS",
+    "date": "2026-07-02T15:30:00",
+    "suspects": [
+      {
+        "name": "Ravi K",
+        "role": "broker"
+      },
+      {
+        "name": "Tariq Ahmed",
+        "role": "financer"
+      }
+    ],
+    "complaint_text": "Meeting between Ravi K and Tariq Ahmed at Beach Road Cafe regarding clearance fees."
+  },
+  {
+    "fir_no": "FIR-205-01",
+    "case_id": "case-205",
+    "police_station": "Crime Branch HQ",
+    "date": "2026-07-10T11:00:00",
+    "suspects": [
+      {
+        "name": "Ravi Kumar",
+        "role": "account_holder"
+      },
+      {
+        "name": "Sanjay Singhal",
+        "role": "hawala_operator"
+      }
+    ],
+    "complaint_text": "Hawala routing through domestic shell accounts including account A101 associated with Ravi Kumar."
+  },
+  {
+    "fir_no": "FIR-205-02",
+    "case_id": "case-205",
+    "police_station": "Economic Offences Wing",
+    "date": "2026-07-18T14:15:00",
+    "suspects": [
+      {
+        "name": "Meera Joshi",
+        "role": "director_apex"
+      },
+      {
+        "name": "Rohan Gupta",
+        "role": "auditor"
+      }
+    ],
+    "complaint_text": "Apex Trading Pvt Ltd audited by Rohan Gupta declared bogus overseas consultancy expenses."
+  },
+  {
+    "fir_no": "FIR-205-03",
+    "case_id": "case-205",
+    "police_station": "Crime Branch HQ",
+    "date": "2026-07-25T16:50:00",
+    "suspects": [
+      {
+        "name": "Sanjay Singhal",
+        "role": "operator"
+      },
+      {
+        "name": "Zubair Merchant",
+        "role": "courier"
+      }
+    ],
+    "complaint_text": "Cash courier Zubair Merchant intercepted carrying token serial matching Hawala ledger."
+  },
+  {
+    "fir_no": "FIR-205-04",
+    "case_id": "case-205",
+    "police_station": "Economic Offences Wing",
+    "date": "2026-08-02T10:30:00",
+    "suspects": [
+      {
+        "name": "Kavita Reddy",
+        "role": "fiduciary"
+      }
+    ],
+    "complaint_text": "Fiduciary accounts held at Global Trust Bank liquidated prior to regulatory audit."
+  },
+  {
+    "fir_no": "FIR-301-01",
+    "case_id": "case-301",
+    "police_station": "Cyber Cell Central",
+    "date": "2026-05-12T13:20:00",
+    "suspects": [
+      {
+        "name": "R. Kumar",
+        "role": "subscriber",
+        "phone": "9876543210"
+      },
+      {
+        "name": "Naveen Patel",
+        "role": "telecom_engineer"
+      }
+    ],
+    "complaint_text": "Illegal 32-port GSM gateway detected in Velachery. Primary SIM batch registered under R. Kumar (Phone 9876543210)."
+  },
+  {
+    "fir_no": "FIR-301-02",
+    "case_id": "case-301",
+    "police_station": "Velachery PS",
+    "date": "2026-05-20T17:00:00",
+    "suspects": [
+      {
+        "name": "Gaurav Sen",
+        "role": "isp_agent"
+      }
+    ],
+    "complaint_text": "ISP connection leased to fictitious business without KYC validation by Gaurav Sen."
+  },
+  {
+    "fir_no": "FIR-301-03",
+    "case_id": "case-301",
+    "police_station": "Cyber Cell Central",
+    "date": "2026-05-29T11:45:00",
+    "suspects": [
+      {
+        "name": "Naveen Patel",
+        "role": "engineer"
+      },
+      {
+        "name": "Imran Qureshi",
+        "role": "server_admin"
+      }
+    ],
+    "complaint_text": "SIP trunk routing logs confirm calls originating from overseas VoIP servers managed by Imran Qureshi."
+  },
+  {
+    "fir_no": "FIR-301-04",
+    "case_id": "case-301",
+    "police_station": "Guindy PS",
+    "date": "2026-06-05T15:10:00",
+    "suspects": [
+      {
+        "name": "R. Kumar",
+        "role": "leaseholder"
+      },
+      {
+        "name": "Sunil Varma",
+        "role": "property_agent"
+      }
+    ],
+    "complaint_text": "Commercial unit rental agreement signed by R. Kumar for server rack placement."
+  },
+  {
+    "fir_no": "FIR-412-01",
+    "case_id": "case-412",
+    "police_station": "Traffic Crime PS",
+    "date": "2026-04-14T08:30:00",
+    "suspects": [
+      {
+        "name": "Ravi Kumar",
+        "role": "registered_owner",
+        "vehicle": "TN01AB1234"
+      },
+      {
+        "name": "Dinesh Chawla",
+        "role": "rto_agent"
+      }
+    ],
+    "complaint_text": "Registration document irregularity detected for sedan TN01AB1234 processed via Dinesh Chawla agency."
+  },
+  {
+    "fir_no": "FIR-412-02",
+    "case_id": "case-412",
+    "police_station": "Tambaram PS",
+    "date": "2026-04-22T19:00:00",
+    "suspects": [
+      {
+        "name": "Harishankar",
+        "role": "mechanic"
+      },
+      {
+        "name": "Babloo Yadav",
+        "role": "chassis_stamper"
+      }
+    ],
+    "complaint_text": "Chassis number alteration workshop busted in Tambaram industrial estate."
+  },
+  {
+    "fir_no": "FIR-412-03",
+    "case_id": "case-412",
+    "police_station": "Traffic Crime PS",
+    "date": "2026-05-01T12:15:00",
+    "suspects": [
+      {
+        "name": "Dinesh Chawla",
+        "role": "agent"
+      },
+      {
+        "name": "Ajay Menon",
+        "role": "forger"
+      }
+    ],
+    "complaint_text": "Seizure of 45 blank smart card registration certificates from Ajay Menon residence."
+  },
+  {
+    "fir_no": "FIR-412-04",
+    "case_id": "case-412",
+    "police_station": "Tambaram PS",
+    "date": "2026-05-18T16:40:00",
+    "suspects": [
+      {
+        "name": "Somesh Paul",
+        "role": "buyer"
+      }
+    ],
+    "complaint_text": "Interception of cloned vehicle on National Highway 45."
+  }
+]

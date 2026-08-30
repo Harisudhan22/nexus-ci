@@ -1,0 +1,26 @@
+[
+  {
+    "post_id": "SOC-001",
+    "case_id": "case-101",
+    "handle": "@shadow_ravi",
+    "platform": "Telegram",
+    "content": "Payment channels active on A101. Ping on 9876543210 for verification.",
+    "linked_person": "Ravi Kumar"
+  },
+  {
+    "post_id": "SOC-002",
+    "case_id": "case-205",
+    "handle": "@apex_singhal",
+    "platform": "WhatsApp",
+    "content": "Ledger token delivered to Central Station locker.",
+    "linked_person": "Sanjay Singhal"
+  },
+  {
+    "post_id": "SOC-003",
+    "case_id": "case-301",
+    "handle": "@voip_naveen",
+    "platform": "Signal",
+    "content": "32 port gateway running on 9876543210 pool.",
+    "linked_person": "Naveen Patel"
+  }
+]

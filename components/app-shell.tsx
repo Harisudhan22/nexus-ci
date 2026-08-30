@@ -30,6 +30,7 @@ const GLOBAL_NAV = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
   { href: '/cases', label: 'Cases', icon: Folder },
   { href: '/audit', label: 'Audit', icon: ScrollText },
+  { href: '/historical-data', label: 'Integrations', icon: ShieldCheck },
 ]
 
 const CASE_NAV = [

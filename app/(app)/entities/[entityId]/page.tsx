@@ -6,9 +6,9 @@ import { User, Tag, Calendar, Database, Compass, Route } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
-export default async function EntityDetailPage({ params }: { params: { entityId: string } }) {
+export default async function EntityDetailPage({ params }: { params: Promise<{ entityId: string }> }) {
   const user = await requireUser()
-  const entityId = params.entityId
+  const { entityId } = await params
   const entity = await getEntity(entityId)
 
   if (!entity) {

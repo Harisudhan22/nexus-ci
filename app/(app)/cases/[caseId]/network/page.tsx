@@ -3,9 +3,9 @@ import { requireUser } from '@/lib/auth/session'
 import { NetworkViewer } from '@/components/network-viewer'
 import { redirect } from 'next/navigation'
 
-export default async function CaseNetworkPage({ params }: { params: { caseId: string } }) {
+export default async function CaseNetworkPage({ params }: { params: Promise<{ caseId: string }> }) {
   const user = await requireUser()
-  const caseId = params.caseId
+  const { caseId } = await params
   const dbCase = await getCase(caseId)
 
   if (!dbCase) {

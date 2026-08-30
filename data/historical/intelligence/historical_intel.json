@@ -1,0 +1,66 @@
+[
+  {
+    "report_id": "INTEL-001",
+    "case_id": "case-101",
+    "title": "Special Branch Bulletin - Cyber Hawala Linkage",
+    "summary": "Intelligence indicates nexus between Chennai cyber fraudsters and Hawala conduit operating via Mount Road. Primary facilitator identified as Ravi Kumar coordinating logistics using phone 9876543210 and vehicle TN01AB1234.",
+    "named_entities": [
+      {
+        "name": "Ravi Kumar",
+        "type": "person"
+      },
+      {
+        "name": "9876543210",
+        "type": "phone"
+      },
+      {
+        "name": "TN01AB1234",
+        "type": "vehicle"
+      },
+      {
+        "name": "Central Station",
+        "type": "location"
+      }
+    ]
+  },
+  {
+    "report_id": "INTEL-002",
+    "case_id": "case-205",
+    "title": "FIU Flash Alert - Shell Company Account Churn",
+    "summary": "High volume cyclic wire transfers between Account A101 and secondary accounts in SBI and HDFC. Account belongs to key operative Ravi Kumar linked with Apex Trading Pvt Ltd.",
+    "named_entities": [
+      {
+        "name": "Ravi Kumar",
+        "type": "person"
+      },
+      {
+        "name": "A101",
+        "type": "account"
+      },
+      {
+        "name": "Apex Trading Pvt Ltd",
+        "type": "org"
+      }
+    ]
+  },
+  {
+    "report_id": "INTEL-003",
+    "case_id": "case-301",
+    "title": "Telecom Enforcement Lead - SIM Churn in Chennai Hub",
+    "summary": "Multiple high-usage SIMs linked to subscriber identity R. Kumar activated across Velachery and Guindy. Traffic patterns indicate SIM box bypass operations.",
+    "named_entities": [
+      {
+        "name": "R. Kumar",
+        "type": "person"
+      },
+      {
+        "name": "9876543210",
+        "type": "phone"
+      },
+      {
+        "name": "Velachery",
+        "type": "location"
+      }
+    ]
+  }
+]

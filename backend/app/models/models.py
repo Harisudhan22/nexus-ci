@@ -32,6 +32,9 @@ class Case(Base):
     priority = Column(String, default="medium")  # low, medium, high, critical
     agency = Column(String, nullable=False)
     classification = Column(String, default="RESTRICTED")  # RESTRICTED, CONFIDENTIAL, SECRET
+    police_station = Column(String, nullable=True)
+    district = Column(String, nullable=True)
+    state = Column(String, nullable=True)
     assigned_to = Column(String, ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
@@ -49,13 +52,13 @@ class Document(Base):
     id = Column(String, primary_key=True, index=True)
     case_id = Column(String, ForeignKey("cases.id"), nullable=False)
     filename = Column(String, nullable=False)
-    source_type = Column(String, nullable=False)  # FIR, CDR, TRANSACTIONS, etc.
+    source_type = Column(String, nullable=False)  # FIR, CDR, TRANSACTIONS, SURVEILLANCE, etc.
     storage_path = Column(String, nullable=False)
     sha256 = Column(String, nullable=False)
     size_bytes = Column(Integer, nullable=False)
     uploaded_by = Column(String, nullable=False)
     uploaded_at = Column(DateTime, default=datetime.datetime.utcnow)
-    processing_status = Column(String, default="queued")  # queued, parsing, completed, failed
+    processing_status = Column(String, default="queued")  # queued, validating, parsing, extracting, resolving, completed, failed
     processing_error = Column(Text, nullable=True)
     extracted_text = Column(Text, nullable=True)
     rows_data = Column(JSON, nullable=True)  # for structured data records like CSV / JSON rows
@@ -95,6 +98,47 @@ class CanonicalEntity(Base):
     y = Column(Float, default=0.0)
 
 
+class EntityRelationship(Base):
+    __tablename__ = "entity_relationships"
+    
+    id = Column(String, primary_key=True, index=True)
+    source_id = Column(String, index=True, nullable=False)
+    source_type = Column(String, nullable=False)
+    target_id = Column(String, index=True, nullable=False)
+    target_type = Column(String, nullable=False)
+    rel_type = Column(String, index=True, nullable=False)  # CALLS, TRANSFERS, OWNS, etc.
+    case_ids = Column(JSON, nullable=False)  # list of case IDs
+    confidence = Column(Integer, default=70)
+    evidence_ids = Column(JSON, default=list)  # list of document IDs
+    source = Column(String, nullable=True)
+    timestamp = Column(String, nullable=True)
+    time_from = Column(String, nullable=True)
+    time_to = Column(String, nullable=True)
+    created_by_pipeline = Column(String, default="manual")
+    occurrences = Column(Integer, default=1)
+    suspicious = Column(Boolean, default=False)
+    rationale = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+class SourceRecord(Base):
+    __tablename__ = "source_records"
+    
+    id = Column(String, primary_key=True, index=True)
+    source_adapter = Column(String, index=True, nullable=False)  # mock_cctns, mock_cdr, mock_financial, etc.
+    source_record_id = Column(String, index=True, nullable=False)
+    record_type = Column(String, index=True, nullable=False)  # FIR, CDR, TRANSACTION, SURVEILLANCE, etc.
+    case_id = Column(String, index=True, nullable=True)
+    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+    sha256 = Column(String, nullable=True)
+    status = Column(String, default="received")  # received, parsed, processed, failed
+    payload = Column(JSON, nullable=False)
+    parsed_entities = Column(JSON, default=list)
+    parsed_relationships = Column(JSON, default=list)
+    error_message = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
 class EntityMergeDecision(Base):
     __tablename__ = "entity_merge_decisions"
     
@@ -109,6 +153,7 @@ class EntityMergeDecision(Base):
     status = Column(String, default="pending")  # pending, accepted, rejected
     user_id = Column(String, nullable=True)
     decided_at = Column(DateTime, nullable=True)
+    rollback_state = Column(JSON, nullable=True)
 
 
 class Finding(Base):
@@ -157,3 +202,61 @@ class InvestigatorQuery(Base):
     answer = Column(Text, nullable=False)
     citations = Column(JSON, nullable=False)  # list of evidence IDs
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+class DocumentChunk(Base):
+    __tablename__ = "document_chunks"
+    
+    id = Column(String, primary_key=True, index=True)
+    document_id = Column(String, index=True, nullable=False)
+    case_id = Column(String, index=True, nullable=False)
+    source_type = Column(String, nullable=True)
+    page = Column(Integer, default=1)
+    chunk_index = Column(Integer, default=0)
+    text_content = Column(Text, nullable=False)
+    embedding_json = Column(JSON, nullable=True)  # List[float] embedding vector
+    sha256 = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+class SourceJob(Base):
+    __tablename__ = "source_jobs"
+    
+    id = Column(String, primary_key=True, index=True)
+    source_adapter = Column(String, nullable=False)
+    source_record_id = Column(String, nullable=False)
+    case_id = Column(String, nullable=True)
+    status = Column(String, default="QUEUED")  # QUEUED, PROCESSING, COMPLETED, FAILED
+    stage = Column(String, default="INIT")
+    progress = Column(Integer, default=0)
+    error = Column(Text, nullable=True)
+    started_at = Column(DateTime, default=datetime.datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+
+
+class DocumentVersion(Base):
+    __tablename__ = "document_versions"
+    
+    id = Column(String, primary_key=True, index=True)
+    document_id = Column(String, ForeignKey("documents.id"), nullable=False, index=True)
+    version_number = Column(Integer, default=1)
+    sha256 = Column(String, nullable=False)
+    storage_path = Column(String, nullable=False)
+    uploader_id = Column(String, nullable=True)
+    change_reason = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+class WorkspaceState(Base):
+    __tablename__ = "workspace_states"
+    
+    id = Column(String, primary_key=True, index=True)
+    case_id = Column(String, ForeignKey("cases.id"), nullable=False, index=True)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    title = Column(String, default="Default Workspace")
+    selected_entity_ids = Column(JSON, default=list)
+    graph_filters = Column(JSON, default=dict)
+    bookmarks = Column(JSON, default=list)
+    notes = Column(Text, nullable=True)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+

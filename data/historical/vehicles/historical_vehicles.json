@@ -1,0 +1,37 @@
+[
+  {
+    "plate_number": "TN01AB1234",
+    "owner_name": "Ravi Kumar",
+    "model": "Maruti Suzuki Swift",
+    "color": "Pearl White",
+    "state": "Tamil Nadu"
+  },
+  {
+    "plate_number": "MH01CD5678",
+    "owner_name": "Sanjay Singhal",
+    "model": "Toyota Fortuner",
+    "color": "Black",
+    "state": "Maharashtra"
+  },
+  {
+    "plate_number": "TN02EF9012",
+    "owner_name": "Manish Shah",
+    "model": "Hyundai Creta",
+    "color": "Silver",
+    "state": "Tamil Nadu"
+  },
+  {
+    "plate_number": "KA03GH3456",
+    "owner_name": "Naveen Patel",
+    "model": "Honda City",
+    "color": "Grey",
+    "state": "Karnataka"
+  },
+  {
+    "plate_number": "DL04IJ7890",
+    "owner_name": "Vikram Seth",
+    "model": "Tata Nexon",
+    "color": "Blue",
+    "state": "Delhi"
+  }
+]

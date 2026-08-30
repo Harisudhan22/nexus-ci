@@ -1,11 +1,14 @@
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from app.db.postgres import engine, Base
-from app.api import auth, cases, evidence, entities, graph, findings, timeline, paths, resolution, copilot, audit
+from app.db.postgres import init_db
+from app.api import (
+    auth, cases, evidence, entities, graph, findings, timeline,
+    paths, resolution, copilot, audit, historical, analytics, rag, ai, sync, reports, websocket, workspace
+)
 
-# Initialize database tables
-Base.metadata.create_all(bind=engine)
+# Initialize database tables and non-destructive schema migrations
+init_db()
 
 app = FastAPI(
     title="NEXUS-CI API",
@@ -36,6 +39,14 @@ app.include_router(paths.router, prefix="/api")
 app.include_router(resolution.router, prefix="/api")
 app.include_router(copilot.router, prefix="/api")
 app.include_router(audit.router, prefix="/api")
+app.include_router(historical.router, prefix="/api")
+app.include_router(analytics.router, prefix="/api")
+app.include_router(rag.router, prefix="/api")
+app.include_router(ai.router, prefix="/api")
+app.include_router(sync.router, prefix="/api")
+app.include_router(reports.router, prefix="/api")
+app.include_router(workspace.router, prefix="/api")
+app.include_router(websocket.router)
 
 @app.get("/api/health")
 def health_check():

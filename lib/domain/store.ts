@@ -1,4 +1,3 @@
-import { cookies } from 'next/headers'
 import type {
   AuditEntry,
   CanonicalEntity,
@@ -17,15 +16,21 @@ const API_URL = process.env.API_URL || 'http://127.0.0.1:8000/api'
 
 // Helper to construct headers with the current Next.js request session cookie
 async function getHeaders() {
-  const jar = await cookies()
-  const token = jar.get('nexus_session')?.value
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   }
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`
-    // Forward the cookie for session detection in FastAPI
-    headers['Cookie'] = `nexus_session=${token}`
+  if (typeof window === 'undefined') {
+    try {
+      const { cookies } = await import('next/headers')
+      const jar = await cookies()
+      const token = jar.get('nexus_session')?.value
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+        headers['Cookie'] = `nexus_session=${token}`
+      }
+    } catch {
+      // Non-request context fallback
+    }
   }
   return headers
 }
@@ -336,3 +341,209 @@ export async function recordAudit(entry: {
   // Audits are recorded on the backend during actions
   return null
 }
+
+// -------------------------------------------------------------------------------------
+// HISTORICAL INTELLIGENCE & MULTI-SOURCE DATA
+// -------------------------------------------------------------------------------------
+export interface HistoricalStats {
+  historicalCases: number
+  firRecords: number
+  cdrRecords: number
+  financialRecords: number
+  surveillanceRecords: number
+  intelligenceRecords: number
+  persons: number
+  phones: number
+  vehicles: number
+  locations: number
+  organizations: number
+  accounts: number
+  documents: number
+  entities: number
+  relationships: number
+  evidence: number
+  indexedRagDocuments: number
+  processingFailures: number
+}
+
+export async function getHistoricalStats(): Promise<HistoricalStats> {
+  try {
+    return await request<HistoricalStats>('/historical/stats')
+  } catch {
+    return {
+      historicalCases: 0,
+      firRecords: 0,
+      cdrRecords: 0,
+      financialRecords: 0,
+      surveillanceRecords: 0,
+      intelligenceRecords: 0,
+      persons: 0,
+      phones: 0,
+      vehicles: 0,
+      locations: 0,
+      organizations: 0,
+      accounts: 0,
+      documents: 0,
+      entities: 0,
+      relationships: 0,
+      evidence: 0,
+      indexedRagDocuments: 0,
+      processingFailures: 0,
+    }
+  }
+}
+
+export interface DataSourceItem {
+  id: string
+  name: string
+  category: string
+  status: string
+  mode: string
+  records: number
+}
+
+export async function listDataSources(): Promise<DataSourceItem[]> {
+  try {
+    return await request<DataSourceItem[]>('/historical/sources')
+  } catch {
+    return []
+  }
+}
+
+export async function importHistoricalBatch(): Promise<{ status: string; message: string }> {
+  return await request<{ status: string; message: string }>('/historical/import-batch', {
+    method: 'POST',
+  })
+}
+
+export async function simulateSourceIngestion(
+  type: 'fir' | 'cdr' | 'transaction',
+  data?: any
+): Promise<{ status: string; recordId: string; message: string }> {
+  return await request<{ status: string; recordId: string; message: string }>(`/historical/simulate/${type}`, {
+    method: 'POST',
+    body: JSON.stringify(data || {}),
+  })
+}
+
+// -------------------------------------------------------------------------------------
+// GLOBAL ENTITY SEARCH & CROSS-CASE INTELLIGENCE
+// -------------------------------------------------------------------------------------
+export interface GlobalEntitySearchResult {
+  id: string
+  label: string
+  type: string
+  subtitle?: string
+  aliases: string[]
+  caseIds: string[]
+  cases: { id: string; title: string; priority: string }[]
+  relevance: number
+  attributes: Record<string, any>
+  phones: string[]
+  vehicles: string[]
+  locations: string[]
+  accounts: string[]
+  organizations: string[]
+  relationshipsCount: number
+  findingsCount: number
+  matchReasons: string[]
+}
+
+export async function searchGlobalEntities(query: string, type?: string): Promise<GlobalEntitySearchResult[]> {
+  try {
+    const params = new URLSearchParams()
+    if (query) params.append('q', query)
+    if (type) params.append('entity_type', type)
+    return await request<GlobalEntitySearchResult[]>(`/entities/search?${params.toString()}`)
+  } catch {
+    return []
+  }
+}
+
+export async function getCrossCaseAnalysis(entityId: string): Promise<any> {
+  try {
+    return await request<any>(`/entities/${entityId}/cross-case-analysis`)
+  } catch {
+    return null
+  }
+}
+
+// -------------------------------------------------------------------------------------
+// P1 ANALYTICS, RAG, COMPARISON & REPORTS
+// -------------------------------------------------------------------------------------
+export async function getGraphCentrality(caseId?: string): Promise<any> {
+  try {
+    const q = caseId ? `?case_id=${caseId}` : ''
+    return await request<any>(`/analytics/centrality${q}`)
+  } catch {
+    return { nodes: [], topConnected: [], topBridges: [] }
+  }
+}
+
+export async function getGraphCommunities(caseId?: string): Promise<any[]> {
+  try {
+    const q = caseId ? `?case_id=${caseId}` : ''
+    return await request<any[]>(`/analytics/communities${q}`)
+  } catch {
+    return []
+  }
+}
+
+export async function getNetworkDna(caseId?: string): Promise<any> {
+  try {
+    const q = caseId ? `?case_id=${caseId}` : ''
+    return await request<any>(`/analytics/network-dna${q}`)
+  } catch {
+    return { networkSize: 0, communityCount: 0, relationshipCount: 0, communicationDensity: 0 }
+  }
+}
+
+export async function queryRAG(question: string, caseId?: string): Promise<any> {
+  try {
+    return await request<any>(`/rag/query`, {
+      method: 'POST',
+      body: JSON.stringify({ question, case_id: caseId }),
+    })
+  } catch {
+    return { retrievedChunks: [], sources: [] }
+  }
+}
+
+export async function querySafeGraph(prompt: string, caseId?: string): Promise<any> {
+  try {
+    return await request<any>(`/ai/graph-query`, {
+      method: 'POST',
+      body: JSON.stringify({ prompt, case_id: caseId }),
+    })
+  } catch {
+    return { nodes: [], edges: [] }
+  }
+}
+
+export async function compareCases(case1: string, case2: string): Promise<any> {
+  try {
+    return await request<any>(`/cases/compare?case1=${case1}&case2=${case2}`)
+  } catch {
+    return null
+  }
+}
+
+export async function generateReport(caseId: string, format: string = 'markdown'): Promise<any> {
+  try {
+    return await request<any>(`/reports/generate`, {
+      method: 'POST',
+      body: JSON.stringify({ case_id: caseId, format }),
+    })
+  } catch {
+    return null
+  }
+}
+
+export async function getFindingExplanation(id: string): Promise<any> {
+  try {
+    return await request<any>(`/findings/${id}/explanation`)
+  } catch {
+    return null
+  }
+}
+

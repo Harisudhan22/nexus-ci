@@ -54,3 +54,24 @@ def review_resolution_candidate(
         )
 
     return {"status": "success", "message": f"Merge candidate decision '{req.decision}' recorded successfully."}
+
+@router.post("/undo/{candidate_id}")
+def undo_merge_decision(
+    candidate_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    neo4j_sess = Depends(get_neo4j)
+):
+    """Reverses an accepted merge decision, restoring canonical entity aliases and creating an audit record."""
+    cand = db.query(EntityMergeDecision).filter(EntityMergeDecision.id == candidate_id).first()
+    if not cand:
+        raise HTTPException(status_code=404, detail="Merge candidate decision not found.")
+    if not verify_case_access(current_user, cand.case_id):
+        raise HTTPException(status_code=403, detail="Access denied.")
+
+    service = EntityResolutionService(db, neo4j_sess)
+    success = service.undo_merge(decision_id=candidate_id, user_id=current_user.id)
+    if not success:
+        raise HTTPException(status_code=400, detail="Failed to undo merge. Only accepted decisions can be undone.")
+
+    return {"status": "success", "message": f"Merge decision '{candidate_id}' successfully undone."}

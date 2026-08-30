@@ -1,0 +1,90 @@
+[
+  {
+    "dossier_id": "DOS-001",
+    "case_id": "case-101",
+    "name": "Ravi Kumar",
+    "aliases": [
+      "Ravi K",
+      "R. Kumar",
+      "RAVI KUMAR"
+    ],
+    "known_phone": "9876543210",
+    "known_vehicle": "TN01AB1234",
+    "organizations": [
+      "Apex Trading Pvt Ltd",
+      "Shadow Net Syndicate"
+    ],
+    "prior_charges": [
+      "Section 420 IPC (Cheating)",
+      "Section 66D IT Act",
+      "Customs Act Section 132"
+    ]
+  },
+  {
+    "dossier_id": "DOS-002",
+    "case_id": "case-101",
+    "name": "Arun",
+    "aliases": [
+      "Arun Driver",
+      "Arun M"
+    ],
+    "known_phone": "9876543211",
+    "known_vehicle": "TN01AB1234",
+    "organizations": [
+      "Shadow Net Syndicate"
+    ],
+    "prior_charges": [
+      "Section 411 IPC (Stolen Property)"
+    ]
+  },
+  {
+    "dossier_id": "DOS-003",
+    "case_id": "case-205",
+    "name": "Sanjay Singhal",
+    "aliases": [
+      "Singhal Bhai"
+    ],
+    "known_phone": "9876543240",
+    "known_vehicle": "MH01CD5678",
+    "organizations": [
+      "Apex Trading Pvt Ltd",
+      "Hawala Syndicate Alpha"
+    ],
+    "prior_charges": [
+      "FEMA Contravention",
+      "PMLA Section 3"
+    ]
+  },
+  {
+    "dossier_id": "DOS-004",
+    "case_id": "case-203",
+    "name": "Manish Shah",
+    "aliases": [
+      "Shah Port"
+    ],
+    "known_phone": "9876543220",
+    "known_vehicle": "TN02EF9012",
+    "organizations": [
+      "Maritime Freight Lines"
+    ],
+    "prior_charges": [
+      "Customs Evasion"
+    ]
+  },
+  {
+    "dossier_id": "DOS-005",
+    "case_id": "case-301",
+    "name": "Naveen Patel",
+    "aliases": [
+      "Telecom Naveen"
+    ],
+    "known_phone": "9876543230",
+    "known_vehicle": "KA03GH3456",
+    "organizations": [
+      "VoIP Gateway Solutions"
+    ],
+    "prior_charges": [
+      "Telegraph Act Section 20"
+    ]
+  }
+]

@@ -132,6 +132,23 @@ class EntityResolutionService:
             ).first()
 
             if canon:
+                matching_mentions = self.db.query(RawMention).filter(
+                    RawMention.case_id == decision.case_id,
+                    RawMention.surface.in_(decision.mentions),
+                    RawMention.type == decision.type
+                ).all()
+                decision.rollback_state = {
+                    "canonical": {
+                        "aliases": list(canon.aliases),
+                        "case_ids": list(canon.case_ids),
+                        "attributes": dict(canon.attributes or {}),
+                    },
+                    "raw_mentions": [
+                        {"id": mention.id, "resolved_to": mention.resolved_to}
+                        for mention in matching_mentions
+                    ],
+                }
+
                 # Add mentions to aliases
                 aliases = list(canon.aliases)
                 for mention_str in decision.mentions:
@@ -191,5 +208,62 @@ class EntityResolutionService:
             )
             self.db.add(audit)
 
+        self.db.commit()
+        return True
+
+    def undo_merge(self, decision_id: str, user_id: str) -> bool:
+        """
+        Reverses a previously accepted merge decision, restoring previous state
+        and logging an immutable ENTITY_UNDO audit entry.
+        """
+        decision = self.db.query(EntityMergeDecision).filter(
+            EntityMergeDecision.id == decision_id,
+            EntityMergeDecision.status == "accepted"
+        ).first()
+
+        if not decision:
+            return False
+
+        canon = self.db.query(CanonicalEntity).filter(
+            CanonicalEntity.id == decision.canonical_id
+        ).first()
+
+        if canon:
+            rollback_state = decision.rollback_state or {}
+            canonical_state = rollback_state.get("canonical", {})
+            if canonical_state:
+                canon.aliases = canonical_state.get("aliases", canon.aliases)
+                canon.case_ids = canonical_state.get("case_ids", canon.case_ids)
+                canon.attributes = canonical_state.get("attributes", canon.attributes)
+            else:
+                canon.aliases = [a for a in canon.aliases if a not in decision.mentions]
+
+            raw_states = rollback_state.get("raw_mentions", [])
+            if raw_states:
+                for raw_state in raw_states:
+                    self.db.query(RawMention).filter(RawMention.id == raw_state["id"]).update(
+                        {RawMention.resolved_to: raw_state.get("resolved_to")},
+                        synchronize_session=False
+                    )
+            else:
+                self.db.query(RawMention).filter(
+                    RawMention.case_id == decision.case_id,
+                    RawMention.surface.in_(decision.mentions),
+                    RawMention.type == decision.type
+                ).update({RawMention.resolved_to: None}, synchronize_session=False)
+
+        decision.status = "undone"
+        decision.decided_at = None
+
+        audit = AuditLog(
+            id=f"audit-{uuid.uuid4().hex[:8]}",
+            timestamp=datetime.datetime.utcnow(),
+            user_id=user_id,
+            action="ENTITY_UNDO",
+            case_id=decision.case_id,
+            resource=f"Merge Undone for Candidate {decision.canonical_label} ({decision.mentions})",
+            result="success"
+        )
+        self.db.add(audit)
         self.db.commit()
         return True

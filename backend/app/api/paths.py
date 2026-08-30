@@ -34,8 +34,8 @@ def get_path(
         except Exception as e:
             print(f"Neo4j path search error: {e}")
 
-    # 2. Python Fallback Solver using local graph links if Neo4j is offline or has no results
-    # Fetch entities and create fallback links
+    # 2. Query canonical EntityRelationship table in PostgreSQL
+    from app.models.models import EntityRelationship
     all_ents = db.query(CanonicalEntity).all()
     ent_map = {e.id: e for e in all_ents}
     if from_id not in ent_map or to_id not in ent_map:
@@ -44,61 +44,27 @@ def get_path(
             detail="Source or target entity not found in case database."
         )
 
-    # Let's mock a path between entities if they belong to the same cluster or share attributes
-    # We will build a small adjacency list based on shared properties
-    nodes = [e for e in all_ents if not case_id or case_id in e.case_ids]
-    
-    # Simple BFS Shortest Path / Dijkstra solver based on local adjacency list
-    # Let's generate a list of mock edges
+    rels = db.query(EntityRelationship).all()
     edges = []
-    
-    # Match callers, tx, names, etc.
-    # To keep it simple and working for the seed data:
-    # If case-101: Ravi Kumar (ent-ravi), R. Kumar (ent-rkumar), Phone 9876543210 (ent-phone)
-    # Let's create edges:
-    for n1 in nodes:
-        for n2 in nodes:
-            if n1.id == n2.id:
-                continue
-            # If names match or they share phone/vehicle
-            is_connected = False
-            rel_type = "LINKED_TO"
-            conf = 60
-            rat = "Shared case membership."
-
-            if n1.type == "person" and n2.type == "phone" and n2.label in n1.attributes.values():
-                is_connected = True
-                rel_type = "OWNS"
-                conf = 95
-                rat = "Phone number matches registered owner name."
-            elif n1.type == "person" and n2.type == "vehicle" and n2.label in n1.attributes.values():
-                is_connected = True
-                rel_type = "OWNS"
-                conf = 90
-                rat = "Vehicle plate registered to owner."
-            elif n1.cluster == n2.cluster:
-                # Share cluster
-                is_connected = True
-                rel_type = "ASSOCIATED_WITH"
-                conf = 50
-                rat = "Identified within same co-occurrence network cluster."
-
-            if is_connected:
-                edges.append({
-                    "id": f"e-{n1.id}-{n2.id}-{rel_type}",
-                    "source": n1.id,
-                    "target": n2.id,
-                    "type": rel_type,
-                    "confidence": conf,
-                    "occurrences": 1,
-                    "timeframe": {"from": "2026-08-01", "to": "2026-08-29"},
-                    "evidenceIds": ["FIR-101"],
-                    "createdByPipeline": "Fallback Solver",
-                    "suspicious": False,
-                    "rationale": rat
-                })
+    for r in rels:
+        if not case_id or case_id in r.case_ids:
+            edges.append({
+                "id": r.id,
+                "source": r.source_id,
+                "target": r.target_id,
+                "type": r.rel_type,
+                "confidence": r.confidence,
+                "occurrences": r.occurrences,
+                "timeframe": {"from": r.time_from or "", "to": r.time_to or ""},
+                "evidenceIds": r.evidence_ids or [],
+                "source_file": r.source or "unknown",
+                "createdByPipeline": r.created_by_pipeline,
+                "suspicious": r.suspicious,
+                "rationale": r.rationale or ""
+            })
 
     # Solver
+    nodes = [e for e in all_ents if not case_id or case_id in e.case_ids]
     adj = {}
     for n in nodes:
         adj[n.id] = []

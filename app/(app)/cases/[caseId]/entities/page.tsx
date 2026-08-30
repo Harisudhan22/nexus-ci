@@ -4,9 +4,9 @@ import { PageHeader } from '@/components/page-header'
 import { EntitiesResolver } from '@/components/entities-resolver'
 import { redirect } from 'next/navigation'
 
-export default async function CaseEntitiesPage({ params }: { params: { caseId: string } }) {
+export default async function CaseEntitiesPage({ params }: { params: Promise<{ caseId: string }> }) {
   const user = await requireUser()
-  const caseId = params.caseId
+  const { caseId } = await params
   const dbCase = await getCase(caseId)
 
   if (!dbCase) {

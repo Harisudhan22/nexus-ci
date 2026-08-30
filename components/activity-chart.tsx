@@ -2,21 +2,19 @@
 
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
-const DATA = [
-  { day: 'Aug 01', analyses: 2, uploads: 1 },
-  { day: 'Aug 05', analyses: 4, uploads: 3 },
-  { day: 'Aug 09', analyses: 6, uploads: 2 },
-  { day: 'Aug 14', analyses: 5, uploads: 4 },
-  { day: 'Aug 18', analyses: 9, uploads: 3 },
-  { day: 'Aug 22', analyses: 7, uploads: 5 },
-  { day: 'Aug 27', analyses: 11, uploads: 2 },
-]
+interface ActivityPoint {
+  day: string
+  analyses: number
+  uploads: number
+}
 
-export function ActivityChart() {
+export function ActivityChart({ data }: { data: ActivityPoint[] }) {
+  const chartData = data.length > 0 ? data : [{ day: 'No data', analyses: 0, uploads: 0 }]
+
   return (
     <div className="h-44 w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={DATA} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+        <AreaChart data={chartData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
           <defs>
             <linearGradient id="gA" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.35} />

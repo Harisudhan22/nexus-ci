@@ -19,7 +19,7 @@ class PipelineCoordinator:
         self.neo4j_sess = neo4j_sess
         self.extractor = EntityExtractor()
         self.resolver = EntityResolutionService(db, neo4j_sess)
-        self.graph_service = Neo4jGraphService(neo4j_sess) if neo4j_sess else None
+        self.graph_service = Neo4jGraphService(neo4j_sess, db)
         self.findings_engine = FindingsEngine(db, neo4j_sess)
 
     def process_document(self, doc_id: str) -> bool:

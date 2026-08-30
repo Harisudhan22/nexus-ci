@@ -4,9 +4,9 @@ import { PageHeader } from '@/components/page-header'
 import { Phone, ArrowRightLeft, FileText, Calendar, Compass, AlertCircle } from 'lucide-react'
 import { redirect } from 'next/navigation'
 
-export default async function CaseTimelinePage({ params }: { params: { caseId: string } }) {
+export default async function CaseTimelinePage({ params }: { params: Promise<{ caseId: string }> }) {
   const user = await requireUser()
-  const caseId = params.caseId
+  const { caseId } = await params
   const dbCase = await getCase(caseId)
 
   if (!dbCase) {

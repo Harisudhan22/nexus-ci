@@ -54,3 +54,14 @@ def acknowledge_finding(
     db.refresh(finding)
 
     return finding
+
+@router.get("/findings/{id}/explanation")
+def get_finding_explanation(
+    id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Provides full analytical explanation, signals, and evidence citations for a finding."""
+    from app.services.analytics.pattern_engine import SuspiciousPatternEngine
+    engine = SuspiciousPatternEngine(db)
+    return engine.get_finding_explanation(id)

@@ -21,12 +21,10 @@ class FindingsEngine:
         """
         findings_created = []
 
-        # 1. Fetch graph data
-        if self.graph_service:
-            subgraph = self.graph_service.get_subgraph(case_id)
-        else:
-            # Fallback mock data if Neo4j is offline
-            subgraph = {"nodes": [], "edges": []}
+        # 1. Fetch graph data. If Neo4j is unavailable, use only persisted
+        # PostgreSQL canonical relationships, never synthetic graph edges.
+        graph_service = self.graph_service or Neo4jGraphService(None, self.db)
+        subgraph = graph_service.get_subgraph(case_id)
 
         nodes = subgraph.get("nodes", [])
         edges = subgraph.get("edges", [])

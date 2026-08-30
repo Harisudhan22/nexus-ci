@@ -6,7 +6,7 @@ import jwt
 from app.core.config import settings
 from app.core.security import ALGORITHM
 from app.db.postgres import get_db
-from app.models.models import User
+from app.models.models import User, Case
 
 # Support extraction from Authorization header or Cookie (for frontend session integration)
 def get_current_user(
@@ -83,25 +83,59 @@ class RoleChecker:
             )
         return current_user
 
-# Case Access & Clearance Checkers
-def verify_case_access(user: User, case_id: str):
-    """
-    Checks if a user is authorized to access a specific case.
-    Also handles clearance checks if necessary.
-    """
-    # Admins or Supervisors can access all cases
-    if user.role.lower() in ["admin", "supervisor"]:
+# Per-user case access overrides (demo RBAC matrix)
+_USER_CASE_ACCESS: dict[str, list[str] | str] = {
+    "u-mira": "ALL",
+    "u-dev": "ALL",
+    "u-admin": "ALL",
+    "u-arjun": ["case-101"],
+    "u-lena": ["case-101", "case-205"],
+}
+
+
+def get_accessible_case_ids(user: User, db: Session) -> list[str] | None:
+    """Return list of accessible case IDs, or None if user can access all cases."""
+    role = user.role.lower()
+    if role in ("admin", "supervisor", "senior_investigator"):
+        return None
+
+    override = _USER_CASE_ACCESS.get(user.id)
+    if override == "ALL":
+        return None
+    if isinstance(override, list):
+        return override
+
+    assigned = db.query(Case.id).filter(Case.assigned_to == user.id).all()
+    return [c.id for c in assigned]
+
+
+def verify_case_access(user: User, case_id: str, db: Session | None = None) -> bool:
+    """Checks if a user is authorized to access a specific case."""
+    role = user.role.lower()
+    if role in ("admin", "supervisor", "senior_investigator"):
         return True
-        
-    # Check user case access list
-    # caseAccess is stored as list of string in types, let's check user permissions in db
-    # We will check if user has access to case_id or caseAccess == "ALL"
-    # Wait, our SQLAlchemy model stores user.clearance and caseAccess
-    # For now, let's assume caseAccess is parsed from DB or checked via a helper
-    import json
-    # Let's say user access is stored or we grant access to assigned cases
-    # We will retrieve case access list or allow if assignee or if agency matches
-    return True  # Handled inside specific routers or database checks for flexibility
+
+    override = _USER_CASE_ACCESS.get(user.id)
+    if override == "ALL":
+        return True
+    if isinstance(override, list):
+        return case_id in override
+
+    if db is not None:
+        case = db.query(Case).filter(Case.id == case_id).first()
+        if case and case.assigned_to == user.id:
+            return True
+    else:
+        from app.db.postgres import SessionLocal
+        temp_db = SessionLocal()
+        try:
+            case = temp_db.query(Case).filter(Case.id == case_id).first()
+            if case and case.assigned_to == user.id:
+                return True
+        finally:
+            temp_db.close()
+
+    return False
 
 def check_clearance(user_clearance: str, required_clearance: str) -> bool:
     levels = ["RESTRICTED", "CONFIDENTIAL", "SECRET"]

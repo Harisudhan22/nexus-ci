@@ -5,9 +5,9 @@ import { StatCard, SeverityBadge, StatusBadge } from '@/components/primitives'
 import { ShieldCheck, Calendar, User, Building, FolderGit, Users, FileStack, Radar, Layers } from 'lucide-react'
 import { redirect } from 'next/navigation'
 
-export default async function CaseOverviewPage({ params }: { params: { caseId: string } }) {
+export default async function CaseOverviewPage({ params }: { params: Promise<{ caseId: string }> }) {
   const user = await requireUser()
-  const caseId = params.caseId
+  const { caseId } = await params
   const dbCase = await getCase(caseId)
 
   if (!dbCase) {

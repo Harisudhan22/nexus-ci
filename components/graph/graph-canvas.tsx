@@ -88,7 +88,9 @@ export function GraphCanvas({
     if (!dragState.current) return
     const dx = e.clientX - dragState.current.x
     const dy = e.clientY - dragState.current.y
-    setTransform((t) => ({ ...t, x: dragState.current!.tx + dx, y: dragState.current!.ty + dy }))
+    const tx = dragState.current.tx
+    const ty = dragState.current.ty
+    setTransform((t) => ({ ...t, x: tx + dx, y: ty + dy }))
   }
   const onPointerUp = () => {
     dragState.current = null

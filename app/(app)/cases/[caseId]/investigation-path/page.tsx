@@ -4,9 +4,9 @@ import { PageHeader } from '@/components/page-header'
 import { PathFinderWidget } from '@/components/path-finder-widget'
 import { redirect } from 'next/navigation'
 
-export default async function CasePathFinderPage({ params }: { params: { caseId: string } }) {
+export default async function CasePathFinderPage({ params }: { params: Promise<{ caseId: string }> }) {
   const user = await requireUser()
-  const caseId = params.caseId
+  const { caseId } = await params
   const dbCase = await getCase(caseId)
 
   if (!dbCase) {

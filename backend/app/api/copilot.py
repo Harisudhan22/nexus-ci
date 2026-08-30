@@ -24,7 +24,9 @@ def query_copilot(
             detail="Access denied to this case context."
         )
 
-    service = CopilotService(db, neo4j_sess)
+    from app.services.graph.graph_service import Neo4jGraphService
+    graph_svc = Neo4jGraphService(session=neo4j_sess, db=db)
+    service = CopilotService(db=db, graph_service=graph_svc)
     res = service.query(
         case_id=req.case_id,
         question=req.question,

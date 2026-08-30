@@ -27,80 +27,25 @@ def get_case_graph(
     if not verify_case_access(current_user, case_id):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied.")
 
-    # 1. Fetch graph from Neo4j (if online)
-    nodes = []
-    edges = []
-    
-    if neo4j_sess:
-        try:
-            filters = {
-                "entity_type": entity_type,
-                "relationship_type": relationship_type,
-                "min_confidence": min_confidence,
-                "suspicious_only": suspicious_only,
-                "selected_entity": selected_entity,
-                "limit": limit
-            }
-            service = Neo4jGraphService(neo4j_sess)
-            subgraph = service.get_subgraph(case_id, filters)
-            nodes = subgraph["nodes"]
-            edges = subgraph["edges"]
-        except Exception as e:
-            print(f"Neo4j retrieval error: {e}")
-            neo4j_sess = None # Fallback to Postgres
+    filters = {
+        "entity_type": entity_type,
+        "relationship_type": relationship_type,
+        "min_confidence": min_confidence,
+        "suspicious_only": suspicious_only,
+        "selected_entity": selected_entity,
+        "limit": limit
+    }
+    service = Neo4jGraphService(neo4j_sess, db)
+    subgraph = service.get_subgraph(case_id, filters)
+    nodes = subgraph.get("nodes", [])
+    edges = subgraph.get("edges", [])
 
-    # 2. Fallback to PostgreSQL if Neo4j is offline or empty
-    if not neo4j_sess or not nodes:
-        # Load canonical entities from Postgres
-        all_ents = db.query(CanonicalEntity).all()
-        nodes = []
-        for ent in all_ents:
-            if case_id in ent.case_ids:
-                nodes.append({
-                    "id": ent.id,
-                    "type": ent.type,
-                    "label": ent.label,
-                    "subtitle": ent.subtitle,
-                    "caseIds": ent.case_ids,
-                    "aliases": ent.aliases,
-                    "relevance": ent.relevance,
-                    "cluster": ent.cluster,
-                    "attributes": ent.attributes,
-                    "x": ent.x,
-                    "y": ent.y
-                })
-        
-        # Build fallback mock relationships based on co-occurrence or basic seeds
-        # (This guarantees a working visual graph even if Neo4j is temporarily unreachable)
-        edges = []
-        node_ids = [n["id"] for n in nodes]
-        
-        # Seed relationships based on entity attributes
-        for n1 in nodes:
-            for n2 in nodes:
-                if n1["id"] == n2["id"]:
-                    continue
-                # If they share cluster or attributes (e.g. name similarity or phone match)
-                if n1["type"] == "phone" and n2["type"] == "person" and n2["label"] in n1["attributes"].values():
-                    edges.append({
-                        "id": f"e-{n1['id']}-{n2['id']}-OWNS",
-                        "source": n1["id"],
-                        "target": n2["id"],
-                        "type": "OWNS",
-                        "confidence": 95,
-                        "occurrences": 1,
-                        "timeframe": {"from": "2026-08-01", "to": "2026-08-29"},
-                        "evidenceIds": ["FIR-101"],
-                        "createdByPipeline": "Fallback Generator",
-                        "suspicious": False,
-                        "rationale": "Linked ownership detected."
-                    })
-
-    # 3. Calculate centrality metrics
+    # Calculate centrality metrics
     centrality_map = run_network_analytics(nodes, edges)
 
     return {
         "nodes": nodes,
         "edges": edges,
-        "centrality": centrality_map
+        "centrality": centrality_map,
+        "graphSource": subgraph.get("graphSource", "none")
     }

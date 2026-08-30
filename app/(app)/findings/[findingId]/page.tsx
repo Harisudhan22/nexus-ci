@@ -2,9 +2,9 @@ import { listFindings } from '@/lib/domain/store'
 import { requireUser } from '@/lib/auth/session'
 import { redirect } from 'next/navigation'
 
-export default async function FindingDetailPage({ params }: { params: { findingId: string } }) {
+export default async function FindingDetailPage({ params }: { params: Promise<{ findingId: string }> }) {
   const user = await requireUser()
-  const findingId = params.findingId
+  const { findingId } = await params
   
   // Find case ID associated with this finding
   let caseId = 'case-101'

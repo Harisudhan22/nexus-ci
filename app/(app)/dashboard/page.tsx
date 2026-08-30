@@ -3,6 +3,7 @@ import {
   ArrowUpRight,
   Boxes,
   CheckCircle2,
+  CircleAlert,
   Cpu,
   Database,
   FileStack,
@@ -22,6 +23,7 @@ import {
   listFindings,
   listResolutionCandidates,
   listUsers,
+  getHistoricalStats,
 } from '@/lib/domain/store'
 import { PageHeader } from '@/components/page-header'
 import { ActivityChart } from '@/components/activity-chart'
@@ -45,25 +47,39 @@ export default async function DashboardPage() {
   const allUsers = await listUsers()
   const userMap = new Map(allUsers.map((u) => [u.id, u]))
 
-  const entities = (await Promise.all(caseIds.map((cId) => listEntities(cId)))).flat()
-  const evidence = (await Promise.all(caseIds.map((cId) => listEvidence(cId)))).flat()
-  const findings = (await Promise.all(caseIds.map((cId) => listFindings(cId)))).flat()
+  const uniqueById = <T extends { id: string }>(arr: T[]) => Array.from(new Map(arr.map(x => [x.id, x])).values())
+
+  const entities = uniqueById((await Promise.all(caseIds.map((cId) => listEntities(cId)))).flat())
+  const evidence = uniqueById((await Promise.all(caseIds.map((cId) => listEvidence(cId)))).flat())
+  const findings = uniqueById((await Promise.all(caseIds.map((cId) => listFindings(cId)))).flat())
   const highFindings = findings.filter((f) => f.severity === 'high')
-  const crossLinks = (await Promise.all(caseIds.map((cId) => listCrossCaseLinks(cId)))).flat()
-  const pendingMerges = (await Promise.all(caseIds.map((cId) => listResolutionCandidates(cId)))).flat().filter(
+  const crossLinks = uniqueById((await Promise.all(caseIds.map((cId) => listCrossCaseLinks(cId)))).flat())
+  const pendingMerges = uniqueById((await Promise.all(caseIds.map((cId) => listResolutionCandidates(cId)))).flat()).filter(
     (c) => c.status === 'pending' && caseIds.includes(c.caseId),
   )
+  const histStats = await getHistoricalStats()
   const audit = (await listAudit())
     .filter((a) => !a.caseId || caseIds.includes(a.caseId))
     .slice(0, 6)
 
   const topFindings = [...findings].sort((a, b) => b.confidence - a.confidence).slice(0, 4)
+  const clusterCount = new Set(entities.map((entity) => entity.cluster).filter(Boolean)).size
+  const relationshipsCount = histStats.relationships
+  const activityByDay = new Map<string, { day: string; analyses: number; uploads: number }>()
+
+  for (const entry of audit) {
+    const day = new Date(entry.timestamp).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+    const current = activityByDay.get(day) ?? { day, analyses: 0, uploads: 0 }
+    if (entry.action === 'QUERY') current.analyses += 1
+    if (entry.action === 'UPLOAD') current.uploads += 1
+    activityByDay.set(day, current)
+  }
 
   const health = [
-    { label: 'Evidence ingestion', status: 'Operational', tone: 'success' as const, icon: Database },
-    { label: 'AI processing', status: 'Operational', tone: 'success' as const, icon: Cpu },
-    { label: 'Graph service', status: 'Operational', tone: 'success' as const, icon: GitMerge },
-    { label: 'Data freshness', status: 'Updated 12m ago', tone: 'success' as const, icon: Layers },
+    { label: 'Evidence ingestion', status: evidence.length > 0 ? `${evidence.length} records` : 'No records', ok: evidence.length > 0, icon: Database },
+    { label: 'AI processing', status: audit.some((a) => a.action === 'QUERY') ? 'Queries logged' : 'No queries', ok: audit.some((a) => a.action === 'QUERY'), icon: Cpu },
+    { label: 'Graph service', status: relationshipsCount > 0 ? `${relationshipsCount} edges` : 'No edges', ok: relationshipsCount > 0, icon: GitMerge },
+    { label: 'Data freshness', status: audit[0]?.timestamp ? new Date(audit[0].timestamp).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : 'No activity', ok: audit.length > 0, icon: Layers },
   ]
 
   return (
@@ -107,7 +123,7 @@ export default async function DashboardPage() {
                 <span className="flex items-center gap-1.5"><span className="size-2 rounded-sm bg-chart-2" />Uploads</span>
               </div>
             </div>
-            <ActivityChart />
+            <ActivityChart data={Array.from(activityByDay.values()).reverse()} />
           </section>
 
           {/* Network overview */}
@@ -121,11 +137,11 @@ export default async function DashboardPage() {
               </div>
               <div className="flex items-center justify-between">
                 <dt className="text-sm text-muted-foreground">Relationships</dt>
-                <dd className="tabular text-sm font-semibold">21</dd>
+                <dd className="tabular text-sm font-semibold">{relationshipsCount}</dd>
               </div>
               <div className="flex items-center justify-between">
                 <dt className="text-sm text-muted-foreground">Major clusters</dt>
-                <dd className="tabular text-sm font-semibold">2</dd>
+                <dd className="tabular text-sm font-semibold">{clusterCount}</dd>
               </div>
             </dl>
             <div className="mt-4 border-t border-border pt-4">
@@ -181,15 +197,15 @@ export default async function DashboardPage() {
           <section className="rounded-lg border border-border bg-card p-5">
             <h2 className="text-sm font-semibold">System health</h2>
             <ul className="mt-4 space-y-3">
-              {health.map(({ label, status, icon: Icon }) => (
+              {health.map(({ label, status, ok, icon: Icon }) => (
                 <li key={label} className="flex items-center gap-3">
                   <span className="flex size-8 items-center justify-center rounded-md border border-border bg-elevated text-muted-foreground">
                     <Icon className="size-4" />
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium">{label}</p>
-                    <p className="flex items-center gap-1 text-[11px] text-success">
-                      <CheckCircle2 className="size-3" />
+                    <p className={`flex items-center gap-1 text-[11px] ${ok ? 'text-success' : 'text-muted-foreground'}`}>
+                      {ok ? <CheckCircle2 className="size-3" /> : <CircleAlert className="size-3" />}
                       {status}
                     </p>
                   </div>
