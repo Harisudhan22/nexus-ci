@@ -101,8 +101,10 @@ class GroundedLocalProvider(BaseLLMProvider):
             }
         elif matched:
             target = matched[0]
+            label = target.get("label") if isinstance(target, dict) else target.label
+            attributes = target.get("attributes") if isinstance(target, dict) else target.attributes
             return {
-                "summary": f"Entity '{target.label}' is registered in target operation. Attributes: {json.dumps(target.attributes)}.",
+                "summary": f"Entity '{label}' is registered in target operation. Attributes: {json.dumps(attributes)}.",
                 "providerType": self.provider_type,
                 "model": "GroundedLocalSolver"
             }

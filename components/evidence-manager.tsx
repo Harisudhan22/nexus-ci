@@ -22,6 +22,19 @@ interface Evidence {
 
 const SOURCE_TYPES = ['FIR', 'POLICE_REPORT', 'CDR', 'TRANSACTIONS', 'VEHICLE', 'JSON', 'IMAGE']
 
+const PROCESSING_LABELS: Record<string, string> = {
+  queued: 'QUEUED',
+  validating: 'VALIDATING FILE',
+  parsing: 'PARSING CONTENT',
+  extracting: 'EXTRACTING ENTITIES',
+  resolving: 'RESOLVING ENTITIES',
+  building_graph: 'BUILDING GRAPH',
+  analyzing: 'RUNNING ANALYTICS',
+  completed: 'COMPLETED',
+  failed: 'FAILED',
+  processing: 'PROCESSING',
+}
+
 export function EvidenceManager({ caseId, initialEvidence }: { caseId: string; initialEvidence: Evidence[] }) {
   const [evidenceList, setEvidenceList] = useState<Evidence[]>(initialEvidence)
   const [selectedDoc, setSelectedDoc] = useState<Evidence | null>(null)
@@ -127,11 +140,6 @@ export function EvidenceManager({ caseId, initialEvidence }: { caseId: string; i
     formData.append('title', selectedFile.name)
 
     try {
-      // Simulate pipeline logs locally for UI updates
-      setTimeout(() => setUploadProgress('HASH GENERATED'), 600)
-      setTimeout(() => setUploadProgress('PARSING'), 1200)
-      setTimeout(() => setUploadProgress('ENTITY EXTRACTION'), 1800)
-
       const res = await fetch(`/api/cases/${caseId}/documents`, {
         method: 'POST',
         body: formData,
@@ -143,6 +151,7 @@ export function EvidenceManager({ caseId, initialEvidence }: { caseId: string; i
       }
 
       const newDoc = await res.json()
+      setUploadProgress(PROCESSING_LABELS[newDoc.status] || PROCESSING_LABELS.processing)
       setEvidenceList(prev => [newDoc, ...prev])
       setSelectedFile(null)
     } catch (err: any) {

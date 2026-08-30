@@ -34,7 +34,7 @@ export default async function DataSourcesPage() {
               <p className="text-xs text-muted-foreground">Standardized multi-source ingestion pipeline converting raw feeds into Common Internal Records</p>
             </div>
             <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center gap-1.5">
-              <CheckCircle2 className="size-3.5" /> All 9 Adapters Active
+              <CheckCircle2 className="size-3.5" /> {sources.length} Adapters Registered
             </span>
           </div>
 

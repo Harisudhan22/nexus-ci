@@ -8,11 +8,12 @@ from sqlalchemy.orm import Session
 
 from app.models.models import (
     CanonicalEntity, Document, EntityRelationship, Finding,
-    InvestigatorQuery, Case, AuditLog
+    InvestigatorQuery, Case, AuditLog, User
 )
 from app.services.graph.graph_service import Neo4jGraphService
 from app.services.rag.rag_service import RAGService
 from app.services.analytics.graph_analytics import GraphAnalyticsService
+from app.core.dependencies import get_accessible_case_ids
 
 class CopilotService:
     def __init__(self, db: Session, graph_service: Optional[Neo4jGraphService] = None):
@@ -24,11 +25,16 @@ class CopilotService:
     def query(self, case_id: str, question: str, user_id: str) -> Dict[str, Any]:
         """Unified multi-source grounded solver combining Graph + RAG + Relational DB."""
         q_lower = question.lower()
+        user = self.db.query(User).filter(User.id == user_id).first()
+        accessible_cases = get_accessible_case_ids(user, self.db) if user else [case_id]
 
         # 1. Entity Recognition & Scope Check
         all_entities = self.db.query(CanonicalEntity).all()
         matched_entities = []
         for ent in all_entities:
+            entity_case_ids = [cid for cid in ent.case_ids if accessible_cases is None or cid in accessible_cases]
+            if case_id not in entity_case_ids:
+                continue
             # Matches label or aliases
             if ent.label.lower() in q_lower or any(str(a).lower() in q_lower for a in ent.aliases):
                 matched_entities.append(ent)
@@ -59,10 +65,10 @@ class CopilotService:
         if "previous cases" in q_lower or "connected to" in q_lower or "cross-case" in q_lower:
             if matched_entities:
                 target = matched_entities[0]
-                cases_list = target.case_ids
+                cases_list = [cid for cid in target.case_ids if accessible_cases is None or cid in accessible_cases]
                 answer_text = f"Entity '{target.label}' ({target.type}) is connected to {len(cases_list)} cases: {', '.join(cases_list)}. Key identifiers: {json.dumps(target.attributes)}."
             else:
-                answer_text = "Cross-case entity analysis indicates multiple shared phone and vehicle nodes across case-101, case-203, case-205, case-301, and case-412."
+                answer_text = ""
 
         # Intent: Strongest bridge / centrality
         elif "bridge" in q_lower or "central" in q_lower or "most connected" in q_lower:
@@ -71,7 +77,7 @@ class CopilotService:
                 b_names = [f"{b['label']} (Betweenness: {b['betweennessCentrality']})" for b in top_bridges[:3]]
                 answer_text = f"The primary structural bridge entities in this network are: {', '.join(b_names)}. These nodes link distinct clusters."
             else:
-                answer_text = "Network analysis identifies target Ravi Kumar as the primary structural bridge across active clusters."
+                answer_text = ""
 
         # Intent: Case summary
         elif "summarize" in q_lower or "summary" in q_lower or "overview" in q_lower:
@@ -79,15 +85,18 @@ class CopilotService:
             if c_obj:
                 answer_text = f"Case {c_obj.id} ({c_obj.title}): {c_obj.description}. Assigned Agency: {c_obj.agency}, Police Station: {c_obj.police_station or 'Central PS'}."
             else:
-                answer_text = f"Case {case_id} summary: Active multi-source investigation with grounded evidence files and canonical knowledge graph."
+                answer_text = ""
 
         # Intent: Generic RAG-driven synthesis
         else:
             if retrieved_chunks:
                 raw_text = retrieved_chunks[0]["textContent"]
                 # Prompt Injection Defense: Strip directive attempts and wrap in data boundary tags
-                clean_text = re.sub(r"(?i)(ignore\s+all\s+previous|system\s+prompt|say\s+this\s+person)", "[REDACTED_DIRECTIVE]", raw_text)
-                bounded_text = f"<evidence_data_content doc_id=\"{retrieved_chunks[0]['documentId']}\">{clean_text}</evidence_data_content>"
+                clean_text = re.sub(
+                    r"(?i)(ignore\s+(all\s+)?previous(\s+system)?\s+instructions?|system\s+prompt|say\s+this\s+person|say\s+person\s+\w+\s+is\s+guilty)",
+                    "[REDACTED_DIRECTIVE]",
+                    raw_text
+                )
                 answer_text = f"Based on evidence chunk from {retrieved_chunks[0]['documentId']}: \"{clean_text[:300]}...\""
             elif matched_entities:
                 target = matched_entities[0]
@@ -110,18 +119,56 @@ class CopilotService:
                 "limitations": ["No matching evidence documents or canonical graph edges support this query."]
             }
 
+        unique_evidence = list(set(evidence_ids))
+        unique_cases = list(set(
+            [case_id] + [
+                c for e in matched_entities for c in e.case_ids
+                if accessible_cases is None or c in accessible_cases
+            ]
+        ))
+        unique_entity_ids = list(set([e.id for e in matched_entities]))
+        evidence_context = {
+            "caseId": case_id,
+            "matchedEntities": [
+                {
+                    "id": ent.id,
+                    "type": ent.type,
+                    "label": ent.label,
+                    "aliases": ent.aliases,
+                    "case_ids": [cid for cid in ent.case_ids if accessible_cases is None or cid in accessible_cases],
+                    "attributes": ent.attributes,
+                }
+                for ent in matched_entities
+            ],
+            "chunks": [
+                {
+                    **chunk,
+                    "textContent": re.sub(
+                        r"(?i)(ignore\s+(all\s+)?previous(\s+system)?\s+instructions?|system\s+prompt|say\s+this\s+person|say\s+person\s+\w+\s+is\s+guilty)",
+                        "[REDACTED_DIRECTIVE]",
+                        chunk.get("textContent", ""),
+                    )
+                }
+                for chunk in retrieved_chunks
+            ],
+            "graphFacts": graph_facts[:5],
+            "draftAnswer": answer_text,
+        }
+
         from app.services.copilot.llm_provider import get_llm_provider
         llm = get_llm_provider()
-
-        unique_evidence = list(set(evidence_ids))
-        unique_cases = list(set([case_id] + [c for e in matched_entities for c in e.case_ids]))
-        unique_entity_ids = list(set([e.id for e in matched_entities]))
+        llm_response = llm.generate_answer(question, evidence_context)
+        provider_summary = llm_response.get("summary") or ""
+        provider_type = llm_response.get("providerType", llm.provider_type)
+        if provider_type == "REAL_LLM" and provider_summary:
+            answer_text = provider_summary
 
         result = {
+            "answer": answer_text,
             "summary": answer_text,
             "confidence": confidence,
-            "provider_type": llm.provider_type,
-            "providerType": llm.provider_type,
+            "provider_type": provider_type,
+            "providerType": provider_type,
             "sources": unique_evidence,
             "cases": unique_cases,
             "entities": unique_entity_ids,
@@ -130,6 +177,7 @@ class CopilotService:
             "supporting_evidence": unique_evidence,
             "key_reasons": ["Matched canonical entity & RAG document chunk evidence."],
             "analytical_interpretation": [f"Grounded analysis for case {case_id} across multi-source evidence."],
+            "graph_facts": graph_facts[:5],
             "graphFacts": graph_facts[:5],
             "limitations": limitations if limitations else ["Analysis constrained to ingested historical evidence records."]
         }

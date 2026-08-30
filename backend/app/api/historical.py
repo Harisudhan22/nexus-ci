@@ -21,6 +21,11 @@ router = APIRouter(prefix="/historical", tags=["historical"])
 
 DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "historical"))
 
+def _source_count(db: Session, document_types: list[str], record_types: list[str]) -> int:
+    doc_count = db.query(Document).filter(Document.source_type.in_(document_types)).count()
+    record_count = db.query(SourceRecord).filter(SourceRecord.record_type.in_(record_types)).count()
+    return doc_count + record_count
+
 @router.get("/stats")
 def get_historical_stats(
     current_user: User = Depends(get_current_user),
@@ -34,11 +39,11 @@ def get_historical_stats(
     total_findings = db.query(Finding).count()
 
     # Category counts
-    fir_count = db.query(Document).filter(Document.source_type == "FIR").count()
-    cdr_count = db.query(Document).filter(Document.source_type == "CDR").count()
-    fin_count = db.query(Document).filter(Document.source_type == "TRANSACTIONS").count()
-    surv_count = db.query(Document).filter(Document.source_type == "SURVEILLANCE").count()
-    intel_count = db.query(Document).filter(Document.source_type == "INTELLIGENCE").count()
+    fir_count = _source_count(db, ["FIR", "POLICE", "POLICE_REPORT"], ["FIR"])
+    cdr_count = _source_count(db, ["CDR"], ["CDR"])
+    fin_count = _source_count(db, ["TRANSACTION", "TRANSACTIONS"], ["TRANSACTION", "TRANSACTIONS"])
+    surv_count = _source_count(db, ["SURVEILLANCE"], ["SURVEILLANCE"])
+    intel_count = _source_count(db, ["INTELLIGENCE", "INTEL_REPORT"], ["INTELLIGENCE", "INTEL_REPORT"])
     failures_count = db.query(Document).filter(Document.processing_status == "failed").count()
 
     # Entity types
@@ -79,15 +84,15 @@ def list_data_sources(
 ):
     """Returns the list and live status of all source adapters."""
     sources_meta = [
-        {"id": "src-cctns", "name": "Mock CCTNS Adapter", "category": "FIR / Police Reports", "status": "Operational", "mode": "Adapter Bridge", "records": db.query(Document).filter(Document.source_type == "FIR").count()},
-        {"id": "src-police", "name": "Mock State Police Adapter", "category": "Police Reports", "status": "Operational", "mode": "Direct Ingestion", "records": db.query(Document).filter(Document.source_type == "POLICE").count()},
-        {"id": "src-cdr", "name": "Mock CDR Adapter", "category": "Call Detail Records", "status": "Operational", "mode": "Stream Parser", "records": db.query(Document).filter(Document.source_type == "CDR").count()},
-        {"id": "src-fin", "name": "Mock Financial Adapter", "category": "Bank & Hawala Transactions", "status": "Operational", "mode": "Ledger Ingestion", "records": db.query(Document).filter(Document.source_type == "TRANSACTIONS").count()},
-        {"id": "src-srv", "name": "Mock Surveillance Adapter", "category": "CCTV & Field Observations", "status": "Operational", "mode": "Event Log Parser", "records": db.query(Document).filter(Document.source_type == "SURVEILLANCE").count()},
-        {"id": "src-dossier", "name": "Mock Criminal History Adapter", "category": "Criminal Dossiers", "status": "Operational", "mode": "Profile Sync", "records": db.query(Document).filter(Document.source_type == "DOSSIER").count()},
-        {"id": "src-intel", "name": "Mock Intelligence Adapter", "category": "Special Branch Intelligence", "status": "Operational", "mode": "Bulletin Ingestion", "records": db.query(Document).filter(Document.source_type == "INTELLIGENCE").count()},
-        {"id": "src-social", "name": "Mock Social Intelligence Adapter", "category": "Social Media OSINT", "status": "Operational", "mode": "OSINT Scraper", "records": db.query(Document).filter(Document.source_type == "SOCIAL").count()},
-        {"id": "src-veh", "name": "Mock Vehicle Adapter", "category": "RTO & Toll Registrations", "status": "Operational", "mode": "Registry Sync", "records": db.query(Document).filter(Document.source_type == "VEHICLE").count()},
+        {"id": "src-cctns", "name": "Mock CCTNS Adapter", "category": "FIR / Police Reports", "status": "Ready", "mode": "Adapter Bridge", "records": _source_count(db, ["FIR"], ["FIR"])},
+        {"id": "src-police", "name": "Mock State Police Adapter", "category": "Police Reports", "status": "Ready", "mode": "Direct Ingestion", "records": _source_count(db, ["POLICE", "POLICE_REPORT"], ["POLICE", "POLICE_REPORT"])},
+        {"id": "src-cdr", "name": "Mock CDR Adapter", "category": "Call Detail Records", "status": "Ready", "mode": "Stream Parser", "records": _source_count(db, ["CDR"], ["CDR"])},
+        {"id": "src-fin", "name": "Mock Financial Adapter", "category": "Bank & Hawala Transactions", "status": "Ready", "mode": "Ledger Ingestion", "records": _source_count(db, ["TRANSACTION", "TRANSACTIONS"], ["TRANSACTION", "TRANSACTIONS"])},
+        {"id": "src-srv", "name": "Mock Surveillance Adapter", "category": "CCTV & Field Observations", "status": "Ready", "mode": "Event Log Parser", "records": _source_count(db, ["SURVEILLANCE"], ["SURVEILLANCE"])},
+        {"id": "src-dossier", "name": "Mock Criminal History Adapter", "category": "Criminal Dossiers", "status": "Ready", "mode": "Profile Sync", "records": _source_count(db, ["DOSSIER", "CRIMINAL_HISTORY"], ["DOSSIER", "CRIMINAL_HISTORY"])},
+        {"id": "src-intel", "name": "Mock Intelligence Adapter", "category": "Special Branch Intelligence", "status": "Ready", "mode": "Bulletin Ingestion", "records": _source_count(db, ["INTELLIGENCE", "INTEL_REPORT"], ["INTELLIGENCE", "INTEL_REPORT"])},
+        {"id": "src-social", "name": "Mock Social Intelligence Adapter", "category": "Social Media OSINT", "status": "Ready", "mode": "OSINT Scraper", "records": _source_count(db, ["SOCIAL", "SOCIAL_INTEL"], ["SOCIAL", "SOCIAL_INTEL"])},
+        {"id": "src-veh", "name": "Mock Vehicle Adapter", "category": "RTO & Toll Registrations", "status": "Ready", "mode": "Registry Sync", "records": _source_count(db, ["VEHICLE", "VEHICLE_RECORD"], ["VEHICLE", "VEHICLE_RECORD"])},
     ]
     return sources_meta
 

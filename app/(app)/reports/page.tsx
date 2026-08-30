@@ -1,16 +1,54 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { PageHeader } from "@/components/page-header"
-import { FileText, Download, CheckCircle2, RefreshCw, ShieldCheck, Printer } from "lucide-react"
+import { FileText, Download, CheckCircle2, RefreshCw } from "lucide-react"
+
+interface CaseOption {
+  id: string
+  title: string
+}
 
 export default function ReportsPage() {
-  const [selectedCase, setSelectedCase] = useState("case-101")
+  const [cases, setCases] = useState<CaseOption[]>([])
+  const [selectedCase, setSelectedCase] = useState("")
   const [reportFormat, setReportFormat] = useState("markdown")
   const [generating, setGenerating] = useState(false)
+  const [loadingCases, setLoadingCases] = useState(true)
   const [reportData, setReportData] = useState<any>(null)
 
+  useEffect(() => {
+    let active = true
+
+    async function loadCases() {
+      try {
+        const res = await fetch("/api/cases")
+        if (!res.ok) return
+
+        const data = await res.json()
+        if (!active) return
+
+        const options = data.map((item: any) => ({
+          id: item.id,
+          title: item.title || item.id,
+        }))
+        setCases(options)
+        setSelectedCase(options[0]?.id || "")
+      } catch (error) {
+        console.error("Case list fetch failed", error)
+      } finally {
+        if (active) setLoadingCases(false)
+      }
+    }
+
+    loadCases()
+    return () => {
+      active = false
+    }
+  }, [])
+
   const handleGenerate = async () => {
+    if (!selectedCase) return
     setGenerating(true)
     try {
       const res = await fetch("/api/reports/generate", {
@@ -58,14 +96,20 @@ export default function ReportsPage() {
               <select
                 value={selectedCase}
                 onChange={(e) => setSelectedCase(e.target.value)}
+                disabled={loadingCases || cases.length === 0}
                 className="mt-1.5 w-full h-10 px-3 rounded-md border border-border bg-background text-sm font-medium focus:outline-none"
               >
-                <option value="case-101">case-101 (Operation Shadow Net)</option>
-                <option value="case-203">case-203 (SIM Routing Ring)</option>
-                <option value="case-205">case-205 (Hawala Syndicate)</option>
-                <option value="case-301">case-301 (Vehicle Fraud)</option>
-                <option value="case-412">case-412 (OSINT Disinformation)</option>
-                <option value="case-501">case-501 (Operation Cyber Shield)</option>
+                {loadingCases ? (
+                  <option>Loading accessible cases...</option>
+                ) : cases.length === 0 ? (
+                  <option>No accessible cases found</option>
+                ) : (
+                  cases.map(item => (
+                    <option key={item.id} value={item.id}>
+                      {item.id} ({item.title})
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 
@@ -84,7 +128,7 @@ export default function ReportsPage() {
             <div className="flex items-end">
               <button
                 onClick={handleGenerate}
-                disabled={generating}
+                disabled={generating || !selectedCase}
                 className="w-full h-10 px-5 rounded-md bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {generating ? <RefreshCw className="size-4 animate-spin" /> : <FileText className="size-4" />}

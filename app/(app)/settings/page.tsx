@@ -6,9 +6,9 @@ export default async function SettingsPage() {
   const user = await requireUser()
 
   const systemStatus = [
-    { name: 'Core API Services', status: 'Operational', icon: Cpu, uri: 'http://localhost:8000/api' },
-    { name: 'PostgreSQL Database', status: 'Operational', icon: Database, uri: 'postgresql://localhost:5432' },
-    { name: 'Neo4j Graph Database', status: 'Operational', icon: Compass, uri: 'bolt://localhost:7687' },
+    { name: 'Core API Services', status: 'Configured', icon: Cpu, uri: 'http://localhost:8000/api' },
+    { name: 'PostgreSQL Database', status: 'Configured', icon: Database, uri: 'postgresql://localhost:5432' },
+    { name: 'Neo4j Graph Database', status: 'Configured', icon: Compass, uri: 'bolt://localhost:7687' },
   ]
 
   return (

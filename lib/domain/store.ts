@@ -14,20 +14,15 @@ import type {
 
 const API_URL = process.env.API_URL || 'http://127.0.0.1:8000/api'
 
-// Helper to construct headers with the current Next.js request session cookie
+// Helper to construct headers with the current request session cookie.
 async function getHeaders() {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   }
   if (typeof window === 'undefined') {
     try {
-      const { cookies } = await import('next/headers')
-      const jar = await cookies()
-      const token = jar.get('nexus_session')?.value
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`
-        headers['Cookie'] = `nexus_session=${token}`
-      }
+      const { getServerAuthHeaders } = await import('./server-auth')
+      Object.assign(headers, await getServerAuthHeaders())
     } catch {
       // Non-request context fallback
     }
@@ -546,4 +541,3 @@ export async function getFindingExplanation(id: string): Promise<any> {
     return null
   }
 }
-
