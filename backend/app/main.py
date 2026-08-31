@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.db.postgres import init_db
 from app.api import (
     auth, cases, evidence, entities, graph, findings, timeline,
-    paths, resolution, copilot, audit, historical, analytics, rag, ai, sync, reports, websocket, workspace
+    paths, resolution, copilot, audit, historical, analytics, rag, ai, sync, reports, websocket, workspace, tasks
 )
 
 # Initialize database tables and non-destructive schema migrations
@@ -27,6 +27,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Rate limiting + security headers middleware
+from app.core.security_middleware import RateLimitMiddleware
+import os
+_rpm = int(os.getenv("RATE_LIMIT_PER_MINUTE", "120"))
+app.add_middleware(RateLimitMiddleware, requests_per_minute=_rpm)
+
 # Register routers
 app.include_router(auth.router, prefix="/api")
 app.include_router(cases.router, prefix="/api")
@@ -46,11 +52,19 @@ app.include_router(ai.router, prefix="/api")
 app.include_router(sync.router, prefix="/api")
 app.include_router(reports.router, prefix="/api")
 app.include_router(workspace.router, prefix="/api")
+app.include_router(tasks.router, prefix="/api")
 app.include_router(websocket.router)
 
 @app.get("/api/health")
 def health_check():
     return {"status": "healthy", "service": "NEXUS-CI Core Backend"}
+
+@app.get("/api/health/deep")
+def deep_health_check():
+    """Comprehensive subsystem health check for monitoring dashboards."""
+    from app.core.observability import check_health_deep
+    return check_health_deep()
+
 
 # Global exception interceptor to satisfy Rule 40: "Error Handling"
 @app.exception_handler(Exception)

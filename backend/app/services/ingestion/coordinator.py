@@ -35,25 +35,37 @@ class PipelineCoordinator:
             doc.processing_status = "validating"
             self.db.commit()
             
-            file_path = doc.storage_path
-            if not os.path.exists(file_path):
-                raise FileNotFoundError(f"Uploaded file not found at storage path: {file_path}")
+            from app.services.evidence.storage_backend import get_storage_backend, calculate_sha256
+            storage = get_storage_backend()
+            file_bytes = storage.load(doc.storage_path)
 
-            # Calculate / verify SHA-256
-            sha256_hash = hashlib.sha256()
-            with open(file_path, "rb") as f:
-                for byte_block in iter(lambda: f.read(4096), b""):
-                    sha256_hash.update(byte_block)
-            doc.sha256 = sha256_hash.hexdigest()
+            if file_bytes is None and os.path.exists(doc.storage_path):
+                with open(doc.storage_path, "rb") as f:
+                    file_bytes = f.read()
+
+            if file_bytes is None:
+                raise FileNotFoundError(f"Uploaded file missing from storage backend: {doc.storage_path}")
+
+            doc.sha256 = calculate_sha256(file_bytes)
             self.db.commit()
 
             # 2. Parsing
             doc.processing_status = "parsing"
             self.db.commit()
-            
+
             _, file_ext = os.path.splitext(doc.filename)
-            text, rows = extract_file_content(file_path, file_ext)
-            
+            if os.path.exists(doc.storage_path):
+                local_path = doc.storage_path
+            else:
+                base_upload = getattr(storage, "base_dir", "./uploads")
+                tmp_dir = os.path.join(base_upload, "_tmp")
+                os.makedirs(tmp_dir, exist_ok=True)
+                local_path = os.path.join(tmp_dir, f"{doc.id}-{os.path.basename(doc.filename)}")
+                with open(local_path, "wb") as f:
+                    f.write(file_bytes)
+
+            text, rows = extract_file_content(local_path, file_ext)
+
             doc.extracted_text = text
             doc.rows_data = rows
             self.db.commit()

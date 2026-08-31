@@ -12,19 +12,24 @@ import type {
   CrossCaseLink,
 } from './types'
 
-const API_URL = process.env.API_URL || 'http://127.0.0.1:8000/api'
+const API_URL = typeof window !== 'undefined' ? '/api' : (process.env.API_URL || 'http://127.0.0.1:8000/api')
 
-// Helper to construct headers with the current request session cookie.
 async function getHeaders() {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   }
   if (typeof window === 'undefined') {
     try {
-      const { getServerAuthHeaders } = await import('./server-auth')
-      Object.assign(headers, await getServerAuthHeaders())
-    } catch {
-      // Non-request context fallback
+      // Use eval to hide require from static analysis by the client bundler
+      const nextHeaders = eval("require('next/headers')");
+      const jar = await nextHeaders.cookies();
+      const token = jar.get('nexus_session')?.value;
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+        headers['Cookie'] = `nexus_session=${token}`;
+      }
+    } catch (e) {
+      // fallback
     }
   }
   return headers

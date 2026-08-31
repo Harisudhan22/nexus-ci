@@ -11,6 +11,12 @@ from app.services.graph.graph_service import Neo4jGraphService
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
+def sanitize_cypher_input(raw_input: str) -> bool:
+    """Rejects raw inputs containing dangerous write/delete Cypher statements."""
+    forbidden = ["delete", "detach", "drop", "create", "merge", "set", "remove"]
+    words = raw_input.lower().split()
+    return not any(f in words for f in forbidden)
+
 class GraphQueryRequest(BaseModel):
     prompt: str
     case_id: Optional[str] = None

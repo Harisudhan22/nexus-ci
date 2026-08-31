@@ -58,6 +58,64 @@ class Neo4jGraphService:
         """
         self.session.run(query, id=entity_id, props=props)
 
+    def sync_postgres_to_neo4j(self) -> Dict[str, Any]:
+        """
+        Safe administrative graph sync operation.
+        Reads canonical entities and relationships from PostgreSQL and MERGEs them into Neo4j.
+        Preserves evidence references, timestamps, and case scopes without destroying data.
+        """
+        if not self.session or not self.db:
+            return {"status": "skipped", "reason": "Neo4j or PostgreSQL session unavailable."}
+
+        from app.models.models import CanonicalEntity, EntityRelationship
+        entities = self.db.query(CanonicalEntity).all()
+        relationships = self.db.query(EntityRelationship).all()
+
+        nodes_synced = 0
+        rels_synced = 0
+
+        for ent in entities:
+            self.create_entity_node(
+                entity_id=ent.id,
+                entity_type=ent.type,
+                label=ent.label,
+                case_ids=ent.case_ids or [],
+                cluster=ent.cluster or "default",
+                properties=ent.attributes or {}
+            )
+            nodes_synced += 1
+
+        for rel in relationships:
+            self.create_relationship(
+                source_id=rel.source_id,
+                source_type=rel.source_type,
+                target_id=rel.target_id,
+                target_type=rel.target_type,
+                rel_type=rel.rel_type,
+                properties={
+                    "confidence": rel.confidence,
+                    "evidence_ids": rel.evidence_ids or [],
+                    "source": rel.source or "unknown",
+                    "timestamp": rel.timestamp or "",
+                    "time_from": rel.time_from or "",
+                    "time_to": rel.time_to or "",
+                    "created_by_pipeline": rel.created_by_pipeline or "sync",
+                    "occurrences": rel.occurrences or 1,
+                    "suspicious": rel.suspicious or False,
+                    "rationale": rel.rationale or ""
+                },
+                case_ids=rel.case_ids or []
+            )
+            rels_synced += 1
+
+        return {
+            "status": "success",
+            "nodes_synced": nodes_synced,
+            "rels_synced": rels_synced,
+            "pg_entities": len(entities),
+            "pg_relationships": len(relationships)
+        }
+
     def create_relationship(self, source_id: str, source_type: str, target_id: str, target_type: str, rel_type: str, properties: Dict[str, Any], case_ids: List[str] = None):
         """Creates a relationship with provenance properties in Neo4j and PostgreSQL."""
         rel_type = rel_type.upper()

@@ -33,3 +33,9 @@ def query_copilot(
         user_id=current_user.id
     )
     return res
+
+@router.get("/status")
+def get_copilot_status():
+    """Returns current active LLM provider configuration and status without exposing credentials."""
+    from app.services.copilot.llm_provider import get_provider_status
+    return get_provider_status()

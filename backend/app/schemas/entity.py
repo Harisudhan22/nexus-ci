@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 
 class RawMentionResponse(BaseModel):
@@ -17,16 +17,17 @@ class CanonicalEntityResponse(BaseModel):
     type: str
     label: str
     subtitle: Optional[str] = None
-    caseIds: List[str]
-    aliases: List[str]
-    relevance: int
-    attributes: Dict[str, Any]
+    caseIds: List[str] = Field(default_factory=list, validation_alias="case_ids")
+    aliases: List[str] = Field(default_factory=list)
+    relevance: int = 50
+    attributes: Dict[str, Any] = Field(default_factory=dict)
     cluster: Optional[str] = None
-    x: float
-    y: float
+    x: float = 0.0
+    y: float = 0.0
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 class MatchSignal(BaseModel):
     label: str

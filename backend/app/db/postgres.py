@@ -13,9 +13,10 @@ from sqlalchemy import text
 
 def init_db():
     Base.metadata.create_all(bind=engine)
-    # Safe non-destructive column additions for existing PostgreSQL tables
     with engine.connect() as conn:
         try:
+            conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
+            conn.execute(text("ALTER TABLE document_chunks ADD COLUMN IF NOT EXISTS embedding vector(64);"))
             conn.execute(text("ALTER TABLE cases ADD COLUMN IF NOT EXISTS police_station VARCHAR;"))
             conn.execute(text("ALTER TABLE cases ADD COLUMN IF NOT EXISTS district VARCHAR;"))
             conn.execute(text("ALTER TABLE cases ADD COLUMN IF NOT EXISTS state VARCHAR;"))

@@ -122,15 +122,14 @@ class RAGService:
         """Executes vector similarity retrieval for a question across case-scoped document chunks."""
         q_emb = self.generate_embedding(question)
 
+        # Fallback: if no chunks pre-indexed, auto-index existing documents for this case
         chunks_query = self.db.query(DocumentChunk)
         if case_id:
             chunks_query = chunks_query.filter(DocumentChunk.case_id == case_id)
         elif user_accessible_cases:
             chunks_query = chunks_query.filter(DocumentChunk.case_id.in_(user_accessible_cases))
 
-        all_chunks = chunks_query.all()
-        if not all_chunks:
-            # Fallback: if no chunks pre-indexed, auto-index existing documents for this case
+        if not chunks_query.first():
             docs_query = self.db.query(Document)
             if case_id:
                 docs_query = docs_query.filter(Document.case_id == case_id)
@@ -141,32 +140,32 @@ class RAGService:
                 if d.extracted_text:
                     self.chunk_document(d.id, d.case_id, d.extracted_text, source_type=d.source_type)
 
-            all_chunks = chunks_query.all()
-
-        scored_chunks = []
-        for c in all_chunks:
-            c_emb = c.embedding_json or SimpleVectorSearch.text_to_vector(c.text_content)
-            score = SimpleVectorSearch.cosine_similarity(q_emb, c_emb)
-            
-            # Keyword bonus if exact phrase match
-            q_words = set(question.lower().split())
-            c_words = set(c.text_content.lower().split())
+        from app.services.rag.vector_backend import get_vector_backend
+        backend = get_vector_backend()
+        
+        # We retrieve a bit more from the backend to allow for re-ranking/keyword boost
+        top_chunks = backend.search_chunks(
+            self.db, 
+            q_emb, 
+            case_id=case_id, 
+            user_accessible_cases=user_accessible_cases, 
+            top_k=top_k * 2
+        )
+        
+        # Apply keyword bonus if exact phrase match
+        q_words = set(question.lower().split())
+        filtered_chunks = []
+        for c in top_chunks:
+            c_words = set(c["textContent"].lower().split())
             overlap_ratio = len(q_words.intersection(c_words)) / max(1, len(q_words))
-            combined_score = round(float(score * 0.7 + overlap_ratio * 0.3), 4)
-
-            if combined_score > 0.05:
-                scored_chunks.append({
-                    "chunkId": c.id,
-                    "documentId": c.document_id,
-                    "caseId": c.case_id,
-                    "sourceType": c.source_type,
-                    "chunkIndex": c.chunk_index,
-                    "textContent": c.text_content,
-                    "score": combined_score
-                })
-
-        scored_chunks.sort(key=lambda x: x["score"], reverse=True)
-        top_chunks = scored_chunks[:top_k]
+            # Boost the score from the backend
+            c["score"] = round(float(c["score"] * 0.7 + overlap_ratio * 0.3), 4)
+            if c["score"] >= 0.15:
+                filtered_chunks.append(c)
+            
+        # Re-sort and slice to top_k
+        filtered_chunks.sort(key=lambda x: x["score"], reverse=True)
+        top_chunks = filtered_chunks[:top_k]
 
         evidence_ids = list(set(item["documentId"] for item in top_chunks))
         case_ids = list(set(item["caseId"] for item in top_chunks))

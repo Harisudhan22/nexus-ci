@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   postgres:
-    image: postgres:15-alpine
+    image: pgvector/pgvector:pg16
     container_name: nexus-postgres
     restart: always
     environment:
@@ -27,6 +27,15 @@ services:
       - neo4j_data:/data
       - neo4j_import:/var/lib/neo4j/import
 
+  redis:
+    image: redis:7-alpine
+    container_name: nexus-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
   api:
     build: ./backend
     container_name: nexus-api
@@ -40,12 +49,40 @@ services:
       - NEO4J_PASSWORD=password
       - JWT_SECRET=dev-jwt-secret-key-for-nexus-ci-hackathon-2026
       - UPLOAD_DIR=/workspace/uploads
-      - LLM_PROVIDER=openai
-      - OPENAI_API_KEY=""
-      - GROQ_API_KEY=""
+      - LLM_PROVIDER=gemini
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - REDIS_URL=redis://redis:6379/0
+      - VECTOR_BACKEND=in_memory
+      - STORAGE_BACKEND=local
+      - RATE_LIMIT_PER_MINUTE=120
+      - LOG_FORMAT=json
     depends_on:
       - postgres
       - neo4j
+      - redis
+    volumes:
+      - uploads_data:/workspace/uploads
+
+  worker:
+    build: ./backend
+    container_name: nexus-worker
+    restart: always
+    command: ["python", "-m", "app.services.ingestion.worker"]
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/nexus_ci
+      - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_USERNAME=neo4j
+      - NEO4J_PASSWORD=password
+      - REDIS_URL=redis://redis:6379/0
+      - UPLOAD_DIR=/workspace/uploads
+      - VECTOR_BACKEND=in_memory
+      - LOG_FORMAT=json
+    depends_on:
+      - postgres
+      - neo4j
+      - redis
     volumes:
       - uploads_data:/workspace/uploads
 
@@ -69,4 +106,5 @@ volumes:
   postgres_data:
   neo4j_data:
   neo4j_import:
+  redis_data:
   uploads_data:

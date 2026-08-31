@@ -22,3 +22,7 @@ class CopilotQueryResponse(BaseModel):
     limitations: List[str] = []
     provider_type: str = "LOCAL_FALLBACK"
     providerType: str = "LOCAL_FALLBACK"
+    provider_name: str = "grounded_local"
+    providerName: str = "grounded_local"
+    model: str = "GroundedLocalSolver"
+    is_real_llm: bool = False

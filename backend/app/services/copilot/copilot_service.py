@@ -68,7 +68,7 @@ class CopilotService:
                 cases_list = [cid for cid in target.case_ids if accessible_cases is None or cid in accessible_cases]
                 answer_text = f"Entity '{target.label}' ({target.type}) is connected to {len(cases_list)} cases: {', '.join(cases_list)}. Key identifiers: {json.dumps(target.attributes)}."
             else:
-                answer_text = ""
+                answer_text = f"Cross-case network query for case {case_id}: {question}"
 
         # Intent: Strongest bridge / centrality
         elif "bridge" in q_lower or "central" in q_lower or "most connected" in q_lower:
@@ -77,7 +77,7 @@ class CopilotService:
                 b_names = [f"{b['label']} (Betweenness: {b['betweennessCentrality']})" for b in top_bridges[:3]]
                 answer_text = f"The primary structural bridge entities in this network are: {', '.join(b_names)}. These nodes link distinct clusters."
             else:
-                answer_text = ""
+                answer_text = f"Network centrality query for case {case_id}: {question}"
 
         # Intent: Case summary
         elif "summarize" in q_lower or "summary" in q_lower or "overview" in q_lower:
@@ -93,7 +93,7 @@ class CopilotService:
                 raw_text = retrieved_chunks[0]["textContent"]
                 # Prompt Injection Defense: Strip directive attempts and wrap in data boundary tags
                 clean_text = re.sub(
-                    r"(?i)(ignore\s+(all\s+)?previous(\s+system)?\s+instructions?|system\s+prompt|say\s+this\s+person|say\s+person\s+\w+\s+is\s+guilty)",
+                    r"(?i)(ignore\s+(all\s+)?previous(\s+system)?\s+instructions?|system\s+prompt|say\s+this\s+person|say\s+person\s+\w+\s+is\s+guilty|say\s+[\w\s]+\s+is\s+guilty)",
                     "[REDACTED_DIRECTIVE]",
                     raw_text
                 )
@@ -105,8 +105,15 @@ class CopilotService:
         # Grounding Enforcement: Check if no retrieved facts
         if not answer_text or (not retrieved_chunks and not matched_entities and not graph_facts):
             return {
+                "answer": "Insufficient evidence in the current dataset.",
                 "summary": "Insufficient evidence in the current dataset.",
                 "confidence": 0,
+                "provider_type": "LOCAL_FALLBACK",
+                "providerType": "LOCAL_FALLBACK",
+                "provider_name": "grounded_local",
+                "providerName": "grounded_local",
+                "model": "GroundedLocalSolver",
+                "is_real_llm": False,
                 "sources": [],
                 "cases": [case_id] if case_id else [],
                 "entities": [],
@@ -144,7 +151,7 @@ class CopilotService:
                 {
                     **chunk,
                     "textContent": re.sub(
-                        r"(?i)(ignore\s+(all\s+)?previous(\s+system)?\s+instructions?|system\s+prompt|say\s+this\s+person|say\s+person\s+\w+\s+is\s+guilty)",
+                        r"(?i)(ignore\s+(all\s+)?previous(\s+system)?\s+instructions?|system\s+prompt|say\s+this\s+person|say\s+person\s+\w+\s+is\s+guilty|say\s+[\w\s]+\s+is\s+guilty)",
                         "[REDACTED_DIRECTIVE]",
                         chunk.get("textContent", ""),
                     )
@@ -155,13 +162,32 @@ class CopilotService:
             "draftAnswer": answer_text,
         }
 
-        from app.services.copilot.llm_provider import get_llm_provider
+        from app.services.copilot.llm_provider import get_llm_provider, GroqProvider
         llm = get_llm_provider()
         llm_response = llm.generate_answer(question, evidence_context)
+
+        # Multi-Provider Outage Fallback: If Gemini fails, fallback to Groq REAL_LLM if available
+        if llm_response.get("error") and getattr(llm, "provider_name", "") == "gemini":
+            groq_key = os.getenv("GROQ_API_KEY", "").strip()
+            if groq_key:
+                try:
+                    groq_model = os.getenv("GROQ_MODEL", "qwen/qwen3.6-27b").strip() or "qwen/qwen3.6-27b"
+                    fallback_llm = GroqProvider(api_key=groq_key, model=groq_model)
+                    fallback_res = fallback_llm.generate_answer(question, evidence_context)
+                    if not fallback_res.get("error"):
+                        llm = fallback_llm
+                        llm_response = fallback_res
+                except Exception:
+                    pass
+
         provider_summary = llm_response.get("summary") or ""
-        provider_type = llm_response.get("providerType", llm.provider_type)
+        provider_type = llm_response.get("providerType", getattr(llm, "provider_type", "LOCAL_FALLBACK"))
         if provider_type == "REAL_LLM" and provider_summary:
             answer_text = provider_summary
+
+        provider_name = llm_response.get("providerName") or llm_response.get("provider_name") or getattr(llm, "provider_name", "grounded_local")
+        model_name = llm_response.get("model") or getattr(llm, "model", "GroundedLocalSolver")
+        is_real_llm = llm_response.get("is_real_llm", getattr(llm, "is_real_llm", False))
 
         result = {
             "answer": answer_text,
@@ -169,6 +195,10 @@ class CopilotService:
             "confidence": confidence,
             "provider_type": provider_type,
             "providerType": provider_type,
+            "provider_name": provider_name,
+            "providerName": provider_name,
+            "model": model_name,
+            "is_real_llm": is_real_llm,
             "sources": unique_evidence,
             "cases": unique_cases,
             "entities": unique_entity_ids,

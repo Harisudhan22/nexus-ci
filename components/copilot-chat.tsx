@@ -15,7 +15,23 @@ interface ChatMessage {
     analytical_interpretation: string[]
     confidence: number
     supporting_evidence: string[]
+    provider_name?: string
+    providerName?: string
+    provider_type?: string
+    providerType?: string
+    model?: string
+    is_real_llm?: boolean
   }
+}
+
+interface ProviderStatus {
+  provider_name?: string
+  providerName?: string
+  provider_type?: string
+  providerType?: string
+  model?: string
+  is_real_llm?: boolean
+  configured?: boolean
 }
 
 const SUGGESTIONS = [
@@ -25,6 +41,26 @@ const SUGGESTIONS = [
 ]
 
 export function CopilotChat({ caseId }: { caseId: string }) {
+  const [providerStatus, setProviderStatus] = useState<ProviderStatus>({
+    provider_name: 'gemini',
+    provider_type: 'REAL_LLM',
+    model: 'gemini-1.5-flash',
+    is_real_llm: true,
+    configured: true
+  })
+
+  // Load active provider status
+  useState(() => {
+    fetch('/api/copilot/status')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.provider_name) {
+          setProviderStatus(data)
+        }
+      })
+      .catch(() => {})
+  })
+
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
@@ -71,6 +107,27 @@ export function CopilotChat({ caseId }: { caseId: string }) {
 
   return (
     <div className="flex flex-col h-[calc(100vh-8.5rem)] max-w-4xl mx-auto border border-border rounded-lg bg-card overflow-hidden my-4 shadow-sm">
+      {/* Provider Status Header */}
+      <div className="px-4 py-2 bg-muted/40 border-b border-border flex items-center justify-between text-xs">
+        <div className="flex items-center gap-2">
+          <Bot className="size-3.5 text-primary" />
+          <span className="font-medium text-foreground">
+            Provider: <strong className="capitalize">{providerStatus.provider_name || providerStatus.providerName || 'gemini'}</strong>
+          </span>
+          <span className={cn(
+            "px-1.5 py-0.5 rounded text-[10px] font-bold uppercase",
+            (providerStatus.provider_type === 'REAL_LLM' || providerStatus.is_real_llm)
+              ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+              : "bg-amber-500/10 text-amber-500 border border-amber-500/20"
+          )}>
+            {(providerStatus.provider_type === 'REAL_LLM' || providerStatus.is_real_llm) ? 'REAL LLM' : 'LOCAL FALLBACK'}
+          </span>
+        </div>
+        <div className="text-[11px] text-muted-foreground font-mono">
+          Model: <span className="text-foreground">{providerStatus.model || 'gemini-1.5-flash'}</span>
+        </div>
+      </div>
+
       {/* Messages Window */}
       <div className="flex-1 overflow-y-auto p-5 space-y-4 min-h-0 bg-surface/30">
         {messages.map((msg, idx) => (
@@ -130,7 +187,7 @@ export function CopilotChat({ caseId }: { caseId: string }) {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border/70 text-xs">
+                  <div className="grid grid-cols-3 gap-4 pt-2 border-t border-border/70 text-xs">
                     <div>
                       <ConfidenceMeter value={msg.structured.confidence} />
                     </div>
@@ -143,6 +200,12 @@ export function CopilotChat({ caseId }: { caseId: string }) {
                           </span>
                         ))}
                       </div>
+                    </div>
+                    <div>
+                      <span className="text-[9px] uppercase text-muted-foreground font-bold block mb-1">Provider Engine</span>
+                      <span className="text-[10px] font-mono text-muted-foreground block truncate">
+                        {msg.structured.providerName || msg.structured.provider_name || providerStatus.provider_name || 'gemini'} ({msg.structured.model || providerStatus.model || 'gemini-1.5-flash'})
+                      </span>
                     </div>
                   </div>
                 </div>
