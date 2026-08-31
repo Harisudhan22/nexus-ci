@@ -89,9 +89,30 @@ class CopilotService:
 
         # Intent: Generic RAG-driven synthesis
         else:
-            if retrieved_chunks:
+            # Check if query specifically names a canonical entity
+            target_ent = None
+            for ent in matched_entities:
+                lbl = ent.label.lower()
+                if lbl in q_lower or any(a.lower() in q_lower for a in (ent.aliases or [])):
+                    target_ent = ent
+                    break
+
+            if target_ent:
+                # Find chunks matching target entity
+                ent_chunks = [c for c in retrieved_chunks if target_ent.label.lower() in c.get("textContent", "").lower()]
+                best_chunk = ent_chunks[0] if ent_chunks else (retrieved_chunks[0] if retrieved_chunks else None)
+                
+                parts = [f"Canonical Entity: '{target_ent.label}' ({target_ent.type.upper()})."]
+                if target_ent.subtitle:
+                    parts.append(f"Role: {target_ent.subtitle}.")
+                if target_ent.attributes:
+                    parts.append(f"Attributes: {json.dumps(target_ent.attributes)}.")
+                if best_chunk:
+                    clean = re.sub(r"(?i)(ignore\s+(all\s+)?previous|system\s+prompt)", "[REDACTED]", best_chunk["textContent"])
+                    parts.append(f"Evidence Citation ({best_chunk['documentId']}): \"{clean[:220]}...\"")
+                answer_text = " ".join(parts)
+            elif retrieved_chunks:
                 raw_text = retrieved_chunks[0]["textContent"]
-                # Prompt Injection Defense: Strip directive attempts and wrap in data boundary tags
                 clean_text = re.sub(
                     r"(?i)(ignore\s+(all\s+)?previous(\s+system)?\s+instructions?|system\s+prompt|say\s+this\s+person|say\s+person\s+\w+\s+is\s+guilty|say\s+[\w\s]+\s+is\s+guilty)",
                     "[REDACTED_DIRECTIVE]",
@@ -100,7 +121,7 @@ class CopilotService:
                 answer_text = f"Based on evidence chunk from {retrieved_chunks[0]['documentId']}: \"{clean_text[:300]}...\""
             elif matched_entities:
                 target = matched_entities[0]
-                answer_text = f"Entity '{target.label}' is registered in case {case_id}. Attributes: {json.dumps(target.attributes)}."
+                answer_text = f"Entity '{target.label}' ({target.type}) is registered in case {case_id}. Role/Subtitle: {target.subtitle or 'Associate'}. Attributes: {json.dumps(target.attributes)}."
 
         # Grounding Enforcement: Check if no retrieved facts
         if not answer_text or (not retrieved_chunks and not matched_entities and not graph_facts):

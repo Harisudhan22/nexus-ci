@@ -47,7 +47,42 @@ export function GraphCanvas({
 
   const pos = useMemo(() => {
     const m = new Map<string, { x: number; y: number }>()
-    nodes.forEach((n) => m.set(n.id, { x: n.x, y: n.y }))
+    if (nodes.length === 0) return m
+
+    // Group nodes by type to form clean visual clusters
+    const typeClusters: Record<string, typeof nodes> = {}
+    nodes.forEach((n) => {
+      const t = (n.type || 'person').toLowerCase()
+      if (!typeClusters[t]) typeClusters[t] = []
+      typeClusters[t].push(n)
+    })
+
+    const types = Object.keys(typeClusters)
+    const center = { x: VIEW_W / 2, y: VIEW_H / 2 }
+    const clusterRadius = Math.min(VIEW_W, VIEW_H) * 0.30
+
+    types.forEach((type, typeIdx) => {
+      const clusterAngle = (2 * Math.PI * typeIdx) / Math.max(1, types.length) - Math.PI / 2
+      const cx = center.x + clusterRadius * Math.cos(clusterAngle)
+      const cy = center.y + clusterRadius * Math.sin(clusterAngle)
+
+      const group = typeClusters[type]
+      const nodeSpreadRadius = Math.min(140, 50 + group.length * 18)
+
+      group.forEach((n, nIdx) => {
+        // If custom non-overlapping x/y exist, use them; otherwise use smart cluster arrangement
+        const hasCustomPos = n.x && n.y && !(Math.abs(n.x - 420) < 5 && Math.abs(n.y - 100) < 5)
+        if (hasCustomPos) {
+          m.set(n.id, { x: n.x, y: n.y })
+        } else {
+          const nodeAngle = (2 * Math.PI * nIdx) / Math.max(1, group.length)
+          const nx = group.length === 1 ? cx : cx + nodeSpreadRadius * Math.cos(nodeAngle)
+          const ny = group.length === 1 ? cy : cy + nodeSpreadRadius * Math.sin(nodeAngle)
+          m.set(n.id, { x: Math.max(80, Math.min(VIEW_W - 80, nx)), y: Math.max(80, Math.min(VIEW_H - 80, ny)) })
+        }
+      })
+    })
+
     return m
   }, [nodes])
 
@@ -191,14 +226,12 @@ export function GraphCanvas({
                     onSelectNode(null)
                   }}
                 />
-                {(selected || onPath) && (
-                  <g transform={`translate(${mx} ${my})`}>
-                    <rect x={-26} y={-9} width={52} height={16} rx={3} fill="var(--card)" stroke="var(--border)" />
-                    <text textAnchor="middle" y={3} fontSize={9} fill="var(--foreground)" className="font-mono">
-                      {e.type}
-                    </text>
-                  </g>
-                )}
+                <g transform={`translate(${mx} ${my})`}>
+                  <rect x={-32} y={-9} width={64} height={16} rx={4} fill="#0f172a" stroke={stroke} strokeWidth={selected ? 1.5 : 1} opacity={0.9} />
+                  <text textAnchor="middle" y={3} fontSize={8} fill="#38bdf8" fontWeight="600" className="font-mono uppercase tracking-tight">
+                    {e.type}
+                  </text>
+                </g>
               </g>
             )
           })}

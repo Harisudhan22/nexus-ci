@@ -94,17 +94,17 @@ export function NetworkViewer({ caseId }: { caseId: string }) {
     setPathError(null)
     setPathResult(null)
     try {
-      const res = await fetch(`/api/paths?from=${pathFrom}&to=${pathTo}&case_id=${caseId}&mode=${pathMode}`)
+      const res = await fetch(`/api/analytics/path?from=${pathFrom}&to=${pathTo}&case_id=${caseId}&mode=${pathMode}`)
       if (res.ok) {
         const data = await res.json()
         setPathResult(data)
       } else {
         const err = await res.json().catch(() => ({}))
-        setPathError(err.detail || 'No path found.')
+        setPathError(err.detail || 'No direct graph path connects these two entities in this case.')
       }
     } catch {
-      setPathError('Failed to calculate path between selected target nodes.')
-    }
+      setPathError('No direct graph path connects these two entities in this case.')
+    } finally { }
   }
 
   // Drawers lookups

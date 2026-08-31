@@ -16,10 +16,12 @@ import {
   ShieldAlert,
   SlidersHorizontal,
   ExternalLink,
-  ChevronRight
+  ChevronRight,
+  Sparkles,
+  Lock,
 } from "lucide-react"
-import { PageHeader } from "@/components/page-header"
 import { EntityBadge, ConfidenceMeter, StatCard } from "@/components/primitives"
+import { cn } from "@/lib/utils"
 
 interface SearchResult {
   id: string
@@ -81,239 +83,181 @@ export default function GlobalEntitySearchPage() {
   }
 
   return (
-    <div>
-      <PageHeader
-        eyebrow="Intelligence Directory"
-        title="Global Entity Search"
-        description="Search canonical entities across all historical and active operations with multi-case convergence matching."
-      />
-
-      <div className="p-6 space-y-6">
-        {/* Search Bar & Filters */}
-        <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
-          <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search by person name, alias, phone (e.g. 9876543210), plate (TN01AB1234), account (A101)..."
-                className="w-full h-10 pl-10 pr-4 rounded-md border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <select
-                value={selectedType}
-                onChange={(e) => {
-                  setSelectedType(e.target.value)
-                  performSearch(query, e.target.value)
-                }}
-                className="h-10 px-3 rounded-md border border-border bg-background text-sm font-medium focus:outline-none"
-              >
-                <option value="all">All Types</option>
-                <option value="person">Persons</option>
-                <option value="phone">Phones</option>
-                <option value="vehicle">Vehicles</option>
-                <option value="account">Accounts</option>
-                <option value="location">Locations</option>
-                <option value="org">Organizations</option>
-              </select>
-
-              <button
-                type="submit"
-                className="h-10 px-5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition flex items-center gap-1.5"
-              >
-                <Search className="size-4" />
-                Search
-              </button>
-            </div>
-          </form>
+    <div className="space-y-6 p-6">
+      {/* Title Console Header */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-800 pb-4">
+        <div>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-0.5 font-mono text-[10px] font-bold text-cyan-400">
+            CROSS-CASE ENTITY CONVERGENCE EXPLORER
+          </span>
+          <h1 className="text-xl font-extrabold text-white">Global Entity Intelligence Directory</h1>
+          <p className="text-xs text-slate-400">
+            Search canonical suspects, phone numbers, vehicle plates, and financial accounts across all historical operations.
+          </p>
         </div>
+      </div>
 
-        {/* Search Results & Convergence Details Split View */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Results List */}
-          <div className="lg:col-span-5 space-y-3">
-            <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
-              <span>{results.length} matches found across historical database</span>
-              {loading && <span className="text-primary animate-pulse">Searching...</span>}
-            </div>
+      {/* Search Input Bar & Type Selector */}
+      <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-4 shadow-xl">
+        <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search suspect name, phone, vehicle plate, account number..."
+              className="h-10 w-full rounded-lg border border-slate-800 bg-slate-950 pl-10 pr-4 text-xs text-white outline-none ring-cyan-500/30 focus:border-cyan-500"
+            />
+          </div>
 
+          <div className="flex items-center gap-2">
+            <select
+              value={selectedType}
+              onChange={(e) => {
+                setSelectedType(e.target.value)
+                performSearch(query, e.target.value)
+              }}
+              className="h-10 rounded-lg border border-slate-800 bg-slate-950 px-3 font-mono text-xs text-slate-200"
+            >
+              <option value="all">ALL ENTITY TYPES</option>
+              <option value="person">PERSON</option>
+              <option value="phone">PHONE</option>
+              <option value="vehicle">VEHICLE</option>
+              <option value="account">ACCOUNT</option>
+              <option value="location">LOCATION</option>
+            </select>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="h-10 rounded-lg bg-cyan-600 px-5 text-xs font-bold text-white shadow-lg shadow-cyan-600/20 hover:bg-cyan-500 active:scale-95 transition"
+            >
+              {loading ? "SEARCHING..." : "SEARCH ENTITIES"}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* 2-Column Split: Results List (5 Cols) vs Cross-Case Intelligence Panel (7 Cols) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-16rem)]">
+        
+        {/* Results List */}
+        <div className="lg:col-span-5 rounded-xl border border-slate-800 bg-slate-900/90 p-4 flex flex-col h-full overflow-hidden">
+          <div className="flex items-center justify-between mb-3 border-b border-slate-800 pb-2">
+            <span className="font-mono text-xs font-bold text-white flex items-center gap-1.5">
+              <Users className="size-4 text-cyan-400" /> SEARCH MATCHES ({results.length})
+            </span>
+          </div>
+
+          <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
             {results.map((ent) => {
-              const isSelected = selectedEntity?.id === ent.id
-              const isMultiCase = ent.caseIds.length > 1
-
+              const active = selectedEntity?.id === ent.id
               return (
                 <div
                   key={ent.id}
                   onClick={() => setSelectedEntity(ent)}
-                  className={`rounded-lg border p-4 cursor-pointer transition ${
-                    isSelected
-                      ? "border-primary bg-primary/5 shadow-sm"
-                      : "border-border bg-card hover:border-border/80 hover:bg-muted/30"
-                  }`}
+                  className={cn(
+                    "cursor-pointer rounded-lg border p-3.5 transition space-y-2",
+                    active
+                      ? "border-cyan-500 bg-cyan-500/10 text-white shadow-lg"
+                      : "border-slate-800 bg-slate-950 text-slate-300 hover:border-slate-700 hover:bg-slate-900"
+                  )}
                 >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm text-foreground">{ent.label}</span>
-                        <EntityBadge type={ent.type as any} />
-                      </div>
-                      {ent.subtitle && (
-                        <p className="text-xs text-muted-foreground mt-0.5">{ent.subtitle}</p>
-                      )}
+                  <div className="flex items-center justify-between font-mono">
+                    <span className="text-[10px] font-bold text-cyan-400 uppercase">{ent.type}</span>
+                    <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-1.5 py-0.5 rounded">
+                      {ent.caseIds?.length || 1} CASES
+                    </span>
+                  </div>
+
+                  <h3 className="font-bold text-sm text-white">{ent.label}</h3>
+                  {ent.subtitle ? <p className="text-xs text-slate-400">{ent.subtitle}</p> : null}
+
+                  {ent.aliases && ent.aliases.length > 0 ? (
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {ent.aliases.map((alias) => (
+                        <span key={alias} className="rounded bg-slate-900 border border-slate-800 px-1.5 py-0.5 text-[9px] font-mono text-slate-400">
+                          {alias}
+                        </span>
+                      ))}
                     </div>
-
-                    {isMultiCase && (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/30">
-                        {ent.caseIds.length} Cases
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Badges / Links */}
-                  <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Layers className="size-3 text-muted-foreground" />
-                      {ent.caseIds.join(", ")}
-                    </span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1">
-                      <GitMerge className="size-3 text-muted-foreground" />
-                      {ent.relationshipsCount} links
-                    </span>
-                  </div>
+                  ) : null}
                 </div>
               )
             })}
-
-            {results.length === 0 && !loading && (
-              <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
-                <Search className="size-8 mx-auto opacity-40 mb-2" />
-                <p className="text-sm font-medium">No historical entities matched "{query}".</p>
-                <p className="text-xs mt-1">Try searching for Ravi Kumar, 9876543210, TN01AB1234, or A101.</p>
-              </div>
-            )}
           </div>
+        </div>
 
-          {/* Detailed Convergence Inspector */}
-          <div className="lg:col-span-7">
-            {selectedEntity ? (
-              <div className="rounded-lg border border-border bg-card p-6 space-y-6 sticky top-6">
-                {/* Header */}
-                <div className="flex items-start justify-between border-b border-border pb-4">
-                  <div>
-                    <div className="flex items-center gap-2.5">
-                      <h3 className="text-xl font-bold">{selectedEntity.label}</h3>
-                      <EntityBadge type={selectedEntity.type as any} />
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Entity ID: <code className="font-mono">{selectedEntity.id}</code> • Priority Score: {selectedEntity.relevance}/100
-                    </p>
-                  </div>
-
-                  <Link
-                    href={`/cases/${selectedEntity.caseIds[0]}/network`}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition"
-                  >
-                    <GitMerge className="size-3.5" />
-                    Open in Graph
-                  </Link>
-                </div>
-
-                {/* Cross-Case Convergence Convergence Callout */}
-                {selectedEntity.caseIds.length > 1 && (
-                  <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 space-y-2">
-                    <div className="flex items-center gap-2 text-amber-500 font-semibold text-sm">
-                      <ShieldAlert className="size-4" />
-                      Multi-Case Convergence Detected ({selectedEntity.caseIds.length} Operations)
-                    </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      Target appears across operations <strong>{selectedEntity.caseIds.join(", ")}</strong> with consistent identifiers and relational anchors.
-                    </p>
-                  </div>
-                )}
-
-                {/* Associated Identifiers Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  <div className="p-3 rounded-md border border-border/70 bg-background/50">
-                    <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-                      <Phone className="size-3 text-emerald-500" /> Linked Phones
-                    </div>
-                    <div className="text-xs font-semibold">
-                      {selectedEntity.phones.length > 0 ? selectedEntity.phones.join(", ") : "None recorded"}
-                    </div>
-                  </div>
-
-                  <div className="p-3 rounded-md border border-border/70 bg-background/50">
-                    <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-                      <Car className="size-3 text-amber-500" /> Linked Vehicles
-                    </div>
-                    <div className="text-xs font-semibold">
-                      {selectedEntity.vehicles.length > 0 ? selectedEntity.vehicles.join(", ") : "None recorded"}
-                    </div>
-                  </div>
-
-                  <div className="p-3 rounded-md border border-border/70 bg-background/50">
-                    <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-                      <CreditCard className="size-3 text-blue-500" /> Bank Accounts
-                    </div>
-                    <div className="text-xs font-semibold">
-                      {selectedEntity.accounts.length > 0 ? selectedEntity.accounts.join(", ") : "None recorded"}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Resolved Aliases */}
+        {/* Cross-Case Intelligence Panel */}
+        <div className="lg:col-span-7 rounded-xl border border-slate-800 bg-slate-900/90 p-5 flex flex-col h-full overflow-hidden">
+          {selectedEntity ? (
+            <div className="flex-1 overflow-y-auto space-y-5 pr-1">
+              <div className="border-b border-slate-800 pb-3 flex items-center justify-between">
                 <div>
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                    Resolved Aliases & Surface Forms
-                  </h4>
-                  <div className="flex flex-wrap gap-1.5">
-                    {selectedEntity.aliases.map((a, i) => (
-                      <span key={i} className="px-2.5 py-1 rounded-md text-xs bg-muted font-medium">
-                        {a}
-                      </span>
-                    ))}
-                  </div>
+                  <span className="font-mono text-[10px] font-bold text-cyan-400 uppercase">{selectedEntity.type}</span>
+                  <h2 className="text-lg font-extrabold text-white">{selectedEntity.label}</h2>
+                  {selectedEntity.subtitle ? <p className="text-xs text-slate-400">{selectedEntity.subtitle}</p> : null}
                 </div>
+                <Link
+                  href={`/cases/${selectedEntity.caseIds?.[0] || 'case-101'}/network`}
+                  className="flex items-center gap-1.5 rounded-lg bg-cyan-600 px-3 py-1.5 text-xs font-bold text-white shadow hover:bg-cyan-500 active:scale-95 transition"
+                >
+                  <GitMerge className="size-3.5" /> View Network Subgraph
+                </Link>
+              </div>
 
-                {/* Historical Cases List */}
-                <div>
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                    Appears in Cases ({selectedEntity.cases.length})
-                  </h4>
-                  <div className="space-y-2">
-                    {selectedEntity.cases.map((c) => (
-                      <div
-                        key={c.id}
-                        className="flex items-center justify-between p-2.5 rounded-md border border-border/60 bg-background/50 text-xs"
+              {/* Connected Cases */}
+              <div className="space-y-2 font-mono">
+                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <Layers className="size-3.5 text-amber-400" /> RECURRING CROSS-CASE OCCURRENCES
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {(selectedEntity.cases || selectedEntity.caseIds || ['case-101']).map((c: any) => {
+                    const cId = typeof c === 'string' ? c : c.id
+                    const cTitle = typeof c === 'string' ? `Investigation ${c}` : c.title
+                    return (
+                      <Link
+                        key={cId}
+                        href={`/cases/${cId}/overview`}
+                        className="p-3 rounded-lg border border-slate-800 bg-slate-950 hover:border-cyan-500/40 hover:bg-slate-900 transition flex items-center justify-between text-xs"
                       >
                         <div>
-                          <span className="font-semibold text-foreground uppercase">{c.id}</span>
-                          <span className="text-muted-foreground ml-2">— {c.title}</span>
+                          <span className="text-cyan-400 font-bold block">{cId}</span>
+                          <span className="text-slate-300 line-clamp-1">{cTitle}</span>
                         </div>
-                        <Link
-                          href={`/cases/${c.id}/overview`}
-                          className="text-primary hover:underline flex items-center gap-1"
-                        >
-                          View Case <ChevronRight className="size-3" />
-                        </Link>
+                        <ArrowUpRight className="size-4 text-slate-500 shrink-0" />
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Key Attributes */}
+              {selectedEntity.attributes && Object.keys(selectedEntity.attributes).length > 0 ? (
+                <div className="space-y-2 font-mono">
+                  <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <Sparkles className="size-3.5 text-emerald-400" /> KNOWN ATTRIBUTES & PROPERTIES
+                  </span>
+                  <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-1 text-xs">
+                    {Object.entries(selectedEntity.attributes).map(([k, v]) => (
+                      <div key={k} className="flex justify-between border-b border-slate-800/60 pb-1 last:border-0">
+                        <span className="text-slate-400">{k}:</span>
+                        <span className="font-bold text-white">{String(v)}</span>
                       </div>
                     ))}
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className="rounded-lg border border-border bg-card p-12 text-center text-muted-foreground">
-                <Users className="size-10 mx-auto opacity-30 mb-3" />
-                <p className="text-sm">Select an entity from the list to view multi-case convergence intelligence.</p>
-              </div>
-            )}
-          </div>
+              ) : null}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-slate-500 text-xs">
+              <Users className="size-8 mb-2 opacity-40" />
+              <span>Select an entity to inspect cross-case convergence</span>
+            </div>
+          )}
         </div>
+
       </div>
     </div>
   )

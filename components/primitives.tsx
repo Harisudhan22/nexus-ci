@@ -12,17 +12,17 @@ export function ConfidenceMeter({
   label?: string
   className?: string
 }) {
-  const tone = value >= 80 ? 'var(--success)' : value >= 60 ? 'var(--warning)' : 'var(--muted-foreground)'
+  const tone = value >= 80 ? '#10b981' : value >= 60 ? '#f59e0b' : '#94a3b8'
   return (
-    <div className={cn('flex flex-col gap-1', className)}>
-      <div className="flex items-center justify-between text-[11px]">
-        <span className="text-muted-foreground">{label}</span>
-        <span className="tabular font-medium text-foreground">{value}%</span>
+    <div className={cn('flex flex-col gap-1 w-full', className)}>
+      <div className="flex items-center justify-between text-[11px] font-mono">
+        <span className="text-slate-400">{label}</span>
+        <span className="font-bold text-white">{value}%</span>
       </div>
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-950 border border-slate-800">
         <div
-          className="h-full rounded-full transition-all"
-          style={{ width: `${Math.min(100, Math.max(0, value))}%`, background: tone }}
+          className="h-full rounded-full transition-all duration-500 shadow-sm"
+          style={{ width: `${Math.min(100, Math.max(0, value))}%`, backgroundColor: tone }}
         />
       </div>
     </div>
@@ -31,17 +31,17 @@ export function ConfidenceMeter({
 
 // ---------- Severity / status badges ----------
 const SEVERITY_TONE: Record<string, string> = {
-  high: 'border-danger/40 bg-danger/10 text-danger',
-  critical: 'border-danger/40 bg-danger/10 text-danger',
-  medium: 'border-warning/40 bg-warning/10 text-warning',
-  low: 'border-border bg-muted text-muted-foreground',
+  high: 'border-rose-500/40 bg-rose-500/10 text-rose-400 font-bold',
+  critical: 'border-rose-500/50 bg-rose-500/15 text-rose-300 font-extrabold animate-pulse',
+  medium: 'border-amber-500/40 bg-amber-500/10 text-amber-400 font-bold',
+  low: 'border-slate-800 bg-slate-900 text-slate-400',
 }
 
 export function SeverityBadge({ severity }: { severity: string }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium capitalize',
+        'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide',
         SEVERITY_TONE[severity] ?? SEVERITY_TONE.low,
       )}
     >
@@ -51,27 +51,27 @@ export function SeverityBadge({ severity }: { severity: string }) {
 }
 
 const STATUS_TONE: Record<string, string> = {
-  active: 'border-success/40 bg-success/10 text-success',
-  processed: 'border-success/40 bg-success/10 text-success',
-  success: 'border-success/40 bg-success/10 text-success',
-  open: 'border-warning/40 bg-warning/10 text-warning',
-  processing: 'border-info/40 bg-info/10 text-info',
-  under_review: 'border-warning/40 bg-warning/10 text-warning',
-  investigating: 'border-info/40 bg-info/10 text-info',
-  acknowledged: 'border-border bg-muted text-muted-foreground',
-  cold: 'border-border bg-muted text-muted-foreground',
-  closed: 'border-border bg-muted text-muted-foreground',
-  dismissed: 'border-border bg-muted text-muted-foreground',
-  failed: 'border-danger/40 bg-danger/10 text-danger',
-  denied: 'border-danger/40 bg-danger/10 text-danger',
+  active: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400 font-bold',
+  processed: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400 font-bold',
+  success: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400 font-bold',
+  open: 'border-amber-500/40 bg-amber-500/10 text-amber-400 font-bold',
+  processing: 'border-cyan-500/40 bg-cyan-500/10 text-cyan-300 font-bold animate-pulse',
+  under_review: 'border-amber-500/40 bg-amber-500/10 text-amber-400 font-bold',
+  investigating: 'border-cyan-500/40 bg-cyan-500/10 text-cyan-400 font-bold',
+  acknowledged: 'border-slate-800 bg-slate-900 text-slate-400',
+  cold: 'border-slate-800 bg-slate-950 text-slate-500',
+  closed: 'border-slate-800 bg-slate-950 text-slate-500',
+  dismissed: 'border-slate-800 bg-slate-950 text-slate-500',
+  failed: 'border-rose-500/40 bg-rose-500/10 text-rose-400 font-bold',
+  denied: 'border-rose-500/40 bg-rose-500/10 text-rose-400 font-bold',
 }
 
 export function StatusBadge({ status }: { status: string }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] font-medium capitalize',
-        STATUS_TONE[status] ?? 'border-border bg-muted text-muted-foreground',
+        'inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 font-mono text-[10px] uppercase font-bold tracking-wide',
+        STATUS_TONE[status] ?? 'border-slate-800 bg-slate-900 text-slate-400',
       )}
     >
       <span className="size-1.5 rounded-full bg-current" />
@@ -90,11 +90,11 @@ export function EntityBadge({
   label?: string
   className?: string
 }) {
-  const meta = ENTITY_META[type]
+  const meta = ENTITY_META[type] || { token: '#38bdf8', label: type }
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] font-medium',
+        'inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-tight shadow-sm',
         className,
       )}
       style={{
@@ -103,7 +103,7 @@ export function EntityBadge({
         color: meta.token,
       }}
     >
-      <span className="size-2 rounded-[3px]" style={{ background: meta.token }} />
+      <span className="size-1.5 rounded-full" style={{ background: meta.token }} />
       {label ?? meta.label}
     </span>
   )
@@ -112,7 +112,7 @@ export function EntityBadge({
 // ---------- Section header ----------
 export function SectionLabel({ children }: { children: ReactNode }) {
   return (
-    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+    <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-slate-400">
       {children}
     </p>
   )
@@ -132,23 +132,24 @@ export function StatCard({
   icon?: ReactNode
   tone?: 'default' | 'warning' | 'danger' | 'success'
 }) {
-  const toneClass =
+  const borderTone =
     tone === 'danger'
-      ? 'text-danger'
+      ? 'border-rose-500/30 hover:border-rose-500/50 bg-slate-900/90'
       : tone === 'warning'
-        ? 'text-warning'
+        ? 'border-amber-500/30 hover:border-amber-500/50 bg-slate-900/90'
         : tone === 'success'
-          ? 'text-success'
-          : 'text-primary'
+          ? 'border-emerald-500/30 hover:border-emerald-500/50 bg-slate-900/90'
+          : 'border-slate-800 hover:border-cyan-500/40 bg-slate-900/90'
+
   return (
-    <div className="flex flex-col justify-between rounded-lg border border-border bg-card p-4">
+    <div className={cn('flex flex-col justify-between rounded-xl border p-4 shadow-xl transition-all duration-200 hover:shadow-cyan-500/5', borderTone)}>
       <div className="flex items-start justify-between">
-        <span className="text-xs text-muted-foreground">{label}</span>
-        {icon ? <span className={cn('shrink-0', toneClass)}>{icon}</span> : null}
+        <span className="font-mono text-[11px] font-bold text-slate-400 tracking-wide uppercase">{label}</span>
+        {icon ? <span className="shrink-0 p-1.5 rounded-lg bg-slate-950 border border-slate-800">{icon}</span> : null}
       </div>
       <div className="mt-3">
-        <p className="tabular text-2xl font-semibold tracking-tight">{value}</p>
-        {hint ? <p className="mt-0.5 text-[11px] text-muted-foreground">{hint}</p> : null}
+        <p className="font-mono text-2xl font-extrabold tracking-tight text-white">{value}</p>
+        {hint ? <p className="mt-1 text-[10px] font-mono text-slate-400">{hint}</p> : null}
       </div>
     </div>
   )
@@ -165,9 +166,9 @@ export function StatCell({
   mono?: boolean
 }) {
   return (
-    <div className="flex flex-col bg-card p-3 text-center">
-      <span className="text-[10px] uppercase text-muted-foreground">{label}</span>
-      <span className={cn('mt-0.5 text-sm font-semibold', mono && 'font-mono')}>{value}</span>
+    <div className="flex flex-col rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-center">
+      <span className="font-mono text-[9px] uppercase font-bold text-slate-400">{label}</span>
+      <span className={cn('mt-0.5 text-xs font-bold text-white', mono && 'font-mono')}>{value}</span>
     </div>
   )
 }
@@ -181,14 +182,13 @@ export function Meter({ value, label = 'Confidence' }: { value: number; label?: 
 export function RelevanceBadge({ value }: { value: number }) {
   const tone =
     value >= 75
-      ? 'border-success/40 bg-success/10 text-success'
+      ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400 font-bold'
       : value >= 50
-        ? 'border-warning/40 bg-warning/10 text-warning'
-        : 'border-border bg-muted text-muted-foreground'
+        ? 'border-amber-500/40 bg-amber-500/10 text-amber-400 font-bold'
+        : 'border-slate-800 bg-slate-950 text-slate-400'
   return (
     <span className={cn('inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-mono font-medium', tone)}>
       {value}%
     </span>
   )
 }
-

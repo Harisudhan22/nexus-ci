@@ -171,6 +171,22 @@ class GraphAnalyticsService:
         """Calculates shortest or highest-confidence path between two entities."""
         G, _ = self.build_networkx_graph(case_id=case_id)
         if from_id not in G or to_id not in G:
+            from_match = None
+            to_match = None
+            for nid, ndata in G.nodes(data=True):
+                lbl = ndata.get("label", "").lower()
+                fid = from_id.lower()
+                tid = to_id.lower()
+                if nid.lower() == fid or lbl == fid or fid in lbl:
+                    from_match = nid
+                if nid.lower() == tid or lbl == tid or tid in lbl:
+                    to_match = nid
+            if from_match:
+                from_id = from_match
+            if to_match:
+                to_id = to_match
+
+        if from_id not in G or to_id not in G:
             return None
 
         try:

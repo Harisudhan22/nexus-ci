@@ -1,7 +1,8 @@
 'use client'
 
+import Link from 'next/link'
 import { useMemo, useState } from 'react'
-import { Search } from 'lucide-react'
+import { PlusCircle, Search, Folder, SlidersHorizontal } from 'lucide-react'
 import type { Case } from '@/lib/domain/types'
 import { CaseCard } from '@/components/case-card'
 import { cn } from '@/lib/utils'
@@ -46,26 +47,48 @@ export function CasesBrowser({ items }: { items: CaseWithMeta[] }) {
   }, [items, query, status, sort])
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
+    <div className="space-y-5 p-6">
+      {/* Title Bar */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-800 pb-4">
+        <div>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-0.5 font-mono text-[10px] font-bold text-cyan-400">
+            INTELLIGENCE OPERATIONS DIRECTORY
+          </span>
+          <h1 className="text-xl font-extrabold text-white">Cases Directory ({items.length})</h1>
+          <p className="text-xs text-slate-400">
+            Browse active investigations, historical cold cases, and multi-agency operations.
+          </p>
+        </div>
+
+        <Link
+          href="/cases/new"
+          className="flex items-center gap-2 rounded-lg bg-cyan-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-cyan-600/20 hover:bg-cyan-500 active:scale-95 transition"
+        >
+          <PlusCircle className="size-4" />
+          + CREATE NEW CASE
+        </Link>
+      </div>
+
+      {/* Filter Toolbar */}
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-800 bg-slate-900/90 p-3 shadow-xl">
         <div className="relative min-w-56 flex-1">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search cases by title, ID, or description"
-            className="h-9 w-full rounded-md border border-input bg-surface pl-9 pr-3 text-sm outline-none ring-ring/40 transition focus:border-primary/60 focus:ring-2"
+            placeholder="Search cases by title, ID, or narrative..."
+            className="h-9 w-full rounded-lg border border-slate-800 bg-slate-950 pl-9 pr-3 text-xs text-white outline-none ring-cyan-500/30 focus:border-cyan-500 font-mono"
           />
         </div>
 
-        <div className="flex items-center gap-1 rounded-md border border-border bg-surface p-0.5">
+        <div className="flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-950 p-1 font-mono text-xs">
           {STATUS_FILTERS.map((s) => (
             <button
               key={s}
               onClick={() => setStatus(s)}
               className={cn(
-                'rounded px-2.5 py-1 text-xs font-medium capitalize transition',
-                status === s ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
+                'rounded-md px-2.5 py-1 text-[11px] font-bold capitalize transition',
+                status === s ? 'bg-cyan-600 text-white shadow' : 'text-slate-400 hover:text-slate-200',
               )}
             >
               {s.replace('_', ' ')}
@@ -76,7 +99,7 @@ export function CasesBrowser({ items }: { items: CaseWithMeta[] }) {
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value as typeof sort)}
-          className="h-9 rounded-md border border-input bg-surface px-3 text-xs text-foreground outline-none focus:border-primary/60"
+          className="h-9 rounded-lg border border-slate-800 bg-slate-950 px-3 font-mono text-xs text-slate-200"
         >
           {SORTS.map((s) => (
             <option key={s.key} value={s.key}>
@@ -86,14 +109,16 @@ export function CasesBrowser({ items }: { items: CaseWithMeta[] }) {
         </select>
       </div>
 
+      {/* Cases Grid */}
       {filtered.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border py-16 text-center">
-          <p className="text-sm text-muted-foreground">No cases match your filters.</p>
+        <div className="rounded-xl border border-dashed border-slate-800 py-16 text-center bg-slate-900/50">
+          <Folder className="size-8 text-slate-600 mx-auto mb-2" />
+          <p className="text-xs font-mono text-slate-400">No cases match your filters.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((it) => (
-            <CaseCard key={it.c.id} c={it.c} stats={it.stats} assignee={it.assignee} />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map(({ c, stats, assignee }) => (
+            <CaseCard key={c.id} c={c} stats={stats} assignee={assignee} />
           ))}
         </div>
       )}

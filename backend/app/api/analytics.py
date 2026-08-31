@@ -55,7 +55,7 @@ def get_shortest_path(
     svc = GraphAnalyticsService(db=db, neo4j_session=neo4j_sess)
     result = svc.find_shortest_path(from_id=from_id, to_id=to_id, case_id=case_id, mode=mode)
     if not result:
-        raise HTTPException(status_code=status.HTTP_444_RESPONSE_REASONS if hasattr(status, "HTTP_444") else 404, detail=f"No path found between {from_id} and {to_id}.")
+        raise HTTPException(status_code=404, detail=f"No graph connection path exists between '{from_id}' and '{to_id}' in case {case_id or 'all'}.")
     return result
 
 @router.get("/network-dna")
